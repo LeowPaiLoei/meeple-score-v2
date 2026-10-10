@@ -680,6 +680,177 @@
         inset 0 0 0 3px rgba(255,255,255,.30),
         0 7px 15px rgba(54,34,17,.16); }
     }
+
+    /* Desktop polish: deliberately isolated from iPad/tablet layouts */
+    @media (min-width:1300px) {
+      body {
+        padding-left:4vw;
+        padding-right:4vw;
+      }
+
+      .app {
+        width:min(1680px,92vw);
+      }
+
+      header {
+        min-height:76px;
+        padding:10px 22px 10px 18px;
+        border-radius:22px;
+        box-shadow:
+          inset 0 1px rgba(255,255,255,.14),
+          inset 0 -4px rgba(24,14,8,.30),
+          0 12px 30px rgba(45,28,15,.24);
+      }
+      header::before,
+      header::after {
+        content:"✦  ❦  ✦";
+        font-size:11px;
+        letter-spacing:.16em;
+        opacity:.72;
+      }
+      header::before { left:8px; }
+      header::after { right:8px; }
+
+      .logo {
+        width:58px;
+        height:58px;
+        font-size:28px;
+        border-width:3px;
+      }
+      .brand { gap:14px; padding-left:15px; }
+      .brand h1 { font-size:40px; }
+      .brand p { font-size:13px; margin-top:5px; }
+      .top-actions { gap:9px; padding-right:12px; }
+      .top-actions .btn {
+        min-height:48px;
+        padding:0 17px;
+        border-radius:14px;
+        font-size:15px;
+      }
+
+      .score-grid { gap:13px; }
+      .player-card {
+        min-height:158px;
+        padding:14px 17px 13px 23px;
+        border-radius:22px;
+        transition:transform .18s ease, box-shadow .18s ease;
+      }
+      .player-card:hover {
+        transform:translateY(-2px);
+        box-shadow:
+          inset 0 0 0 3px rgba(255,255,255,.32),
+          0 14px 26px rgba(54,34,17,.23);
+      }
+      .player-card::after {
+        inset:7px;
+        border-radius:15px;
+      }
+      .player-name { font-size:20px; }
+      .player-dot { width:18px; height:18px; }
+      .rank { font-size:11px; padding:5px 9px; }
+      .player-body { gap:18px; margin-top:10px; }
+      .score {
+        min-width:110px;
+        font-size:74px;
+      }
+      .mini-history {
+        padding:8px 10px;
+        border-radius:12px;
+      }
+      .mini-history-title { font-size:10px; }
+      .mini-history-scroll { max-height:50px; }
+      .mini-history-row {
+        height:25px;
+        font-size:11px;
+      }
+      .mini-history-empty { height:25px; font-size:11px; }
+
+      .dashboard-action { margin:4px 0 2px; }
+      .add-score-main {
+        min-height:58px;
+        min-width:220px;
+        padding:0 34px;
+        border-radius:18px;
+        font-size:19px;
+        transition:transform .16s ease, box-shadow .16s ease, filter .16s ease;
+      }
+      .add-score-main:hover {
+        transform:translateY(-2px);
+        filter:brightness(1.06);
+        box-shadow:
+          inset 0 1px rgba(255,255,255,.20),
+          inset 0 -3px rgba(17,31,21,.30),
+          0 12px 24px rgba(37,53,30,.34);
+      }
+
+      .track-section {
+        padding:12px 18px 15px;
+        border-width:2px;
+        border-radius:24px;
+      }
+      .track-section::before {
+        inset:8px;
+        border-radius:16px;
+        box-shadow:inset 0 0 24px rgba(245,207,117,.05);
+      }
+      .track-header { margin-bottom:4px; }
+      .track-header h2 { font-size:21px; }
+      .track-header p { display:block; font-size:11px; }
+      .track-legend { max-width:66%; gap:6px; }
+      .track-chip {
+        min-height:29px;
+        padding:0 10px;
+        font-size:11px;
+      }
+      .track-stage {
+        padding:0 70px 10px;
+      }
+      .track-board {
+        transform:rotateX(4deg) rotateZ(-.12deg);
+        transition:transform .22s ease, filter .22s ease;
+      }
+      .track-section:hover .track-board {
+        transform:rotateX(2.5deg) rotateZ(0deg) scale(1.008);
+        filter:
+          drop-shadow(0 17px 10px rgba(20,13,7,.38))
+          sepia(.06) saturate(1.10);
+      }
+      .track-board svg {
+        max-height:390px;
+      }
+
+      .footer-bar {
+        min-height:38px;
+        padding:9px 14px;
+        border-radius:16px;
+        font-size:12px;
+      }
+
+      .modal {
+        animation:modalRise .20s ease both;
+      }
+      .modal.wide {
+        width:min(1180px,88vw);
+      }
+      .modal h2 { font-size:31px; }
+      .recipient-btn { min-height:64px; font-size:15px; }
+      .category-btn,
+      .goods-btn { min-height:50px; font-size:14px; }
+      .point-btn { min-height:54px; font-size:18px; }
+      .pending-input { min-height:54px; }
+      .btn:hover,
+      .point-btn:hover,
+      .category-btn:hover,
+      .goods-btn:hover,
+      .recipient-btn:hover {
+        filter:brightness(1.025);
+      }
+    }
+
+    @keyframes modalRise {
+      from { opacity:0; transform:translateY(12px) scale(.985); }
+      to { opacity:1; transform:translateY(0) scale(1); }
+    }
   </style>
 
 </head>
