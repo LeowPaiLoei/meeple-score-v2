@@ -14,6 +14,7 @@ An experimental visual redesign of **Meeple Score**, built as a separate reposit
 - Chicken, Cloth, and Rice goods
 - Per-player recent score history
 - Live pseudo-3D 50-space score track with lap indicators
+- Desktop-specific large-screen polish with expanded layout and track
 - Offline-capable PWA for iPad
 
 ## Safety
