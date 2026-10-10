@@ -1,4 +1,4 @@
-const CACHE = 'meeple-score-v2-premium-4';
+const CACHE = 'meeple-score-v2-premium-5';
 const ASSETS = [
   './',
   './index.html',
