@@ -1744,11 +1744,16 @@
     THREE = await import('https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js');
   } catch (error) {
     status.classList.add('error');
-    status.textContent = 'ไม่สามารถโหลดระบบ 3D ได้ในขณะนี้ • ลองเชื่อมต่ออินเทอร์เน็ตแล้ว Refresh อีกครั้ง';
+    status.textContent = 'ไม่สามารถโหลดระบบ 3D ได้ • ตรวจสอบอินเทอร์เน็ตแล้ว Refresh อีกครั้ง';
     return;
   }
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true, powerPreference:'high-performance' });
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias:true,
+    alpha:true,
+    powerPreference:'high-performance'
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1765,12 +1770,12 @@
   let pitch = 0.62;
   let distance = 21.5;
   let autoSpin = false;
-  let lastInteraction = performance.now();
+  let sceneFailed = false;
 
   const hemi = new THREE.HemisphereLight(0xe8e0bd, 0x243021, 1.75);
   scene.add(hemi);
 
-  const sun = new THREE.DirectionalLight(0xffe4aa, 3.1);
+  const sun = new THREE.DirectionalLight(0xffe4aa, 3.0);
   sun.position.set(-8, 15, 7);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024,1024);
@@ -1782,7 +1787,7 @@
   sun.shadow.camera.far = 40;
   scene.add(sun);
 
-  const warm = new THREE.PointLight(0xd48443, 28, 22, 2);
+  const warm = new THREE.PointLight(0xd48443, 24, 22, 2);
   warm.position.set(7, 5, -4);
   scene.add(warm);
 
@@ -1792,7 +1797,6 @@
   const woodMat = new THREE.MeshStandardMaterial({ color:0x5e3a20, roughness:.62, metalness:.05 });
   const darkWoodMat = new THREE.MeshStandardMaterial({ color:0x2d1b12, roughness:.72 });
   const grassMat = new THREE.MeshStandardMaterial({ color:0x66864e, roughness:.93 });
-  const goldMat = new THREE.MeshStandardMaterial({ color:0xc89b48, roughness:.36, metalness:.45 });
   const stoneMat = new THREE.MeshStandardMaterial({ color:0xc7b284, roughness:.88 });
   const redRoofMat = new THREE.MeshStandardMaterial({ color:0x8b4737, roughness:.78 });
 
@@ -1807,7 +1811,6 @@
   inset.receiveShadow = true;
   world.add(inset);
 
-  // Carved rails around the board.
   [
     [0,.22,-5.13,17.45,.36,.28],
     [0,.22, 5.13,17.45,.36,.28],
@@ -1822,7 +1825,8 @@
 
   function canvasTextureForCell(n) {
     const cnv = document.createElement('canvas');
-    cnv.width = 128; cnv.height = 72;
+    cnv.width = 128;
+    cnv.height = 72;
     const ctx = cnv.getContext('2d');
     const special = n % 10 === 0;
     const grad = ctx.createLinearGradient(0,0,0,72);
@@ -1835,11 +1839,12 @@
     ctx.strokeRect(3,3,122,66);
     ctx.fillStyle = '#3f3626';
     ctx.font = '900 31px Georgia, serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
     ctx.fillText(String(n),64,38);
     const tex = new THREE.CanvasTexture(cnv);
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
     return tex;
   }
 
@@ -1855,7 +1860,7 @@
 
     const tileMat = new THREE.MeshStandardMaterial({
       map:canvasTextureForCell(i),
-      roughness:.75,
+      roughness:.76,
       metalness:0
     });
     const tile = new THREE.Mesh(tileGeo,tileMat);
@@ -1865,16 +1870,20 @@
     world.add(tile);
   }
 
-  // A softly glowing start medallion.
   const startRing = new THREE.Mesh(
-    new THREE.TorusGeometry(.58,.055,18,64),
-    new THREE.MeshStandardMaterial({color:0xf0ca70,emissive:0x55370c,emissiveIntensity:.35,metalness:.55,roughness:.3})
+    new THREE.TorusGeometry(.58,.055,16,48),
+    new THREE.MeshStandardMaterial({
+      color:0xf0ca70,
+      emissive:0x55370c,
+      emissiveIntensity:.35,
+      metalness:.55,
+      roughness:.3
+    })
   );
   startRing.rotation.x = Math.PI/2;
   startRing.position.copy(cellPositions[0]).add(new THREE.Vector3(0,.18,0));
   world.add(startRing);
 
-  // Medieval scenery around the score path.
   function addTower(x,z,s=1) {
     const g = new THREE.Group();
     const tower = new THREE.Mesh(new THREE.CylinderGeometry(.34,.4,1.05,10),stoneMat);
@@ -1891,11 +1900,13 @@
   addTower(-8.0,-4.35,.8);
   addTower( 8.0,-4.35,.8);
 
+  const treeTrunkMat = new THREE.MeshStandardMaterial({color:0x5d3a20,roughness:1});
+  const treeLeafMat = new THREE.MeshStandardMaterial({color:0x315c39,roughness:.95});
   function addTree(x,z,s=1) {
     const g = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.08,.11,.48,7),new THREE.MeshStandardMaterial({color:0x5d3a20,roughness:1}));
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.08,.11,.48,7),treeTrunkMat);
     trunk.position.y=.24;
-    const crown = new THREE.Mesh(new THREE.ConeGeometry(.36,.9,9),new THREE.MeshStandardMaterial({color:0x315c39,roughness:.95}));
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(.36,.9,9),treeLeafMat);
     crown.position.y=.78;
     trunk.castShadow=crown.castShadow=true;
     g.add(trunk,crown);
@@ -1906,7 +1917,6 @@
   [[-7.8,4.3,.8],[-6.9,4.45,.65],[7.6,4.2,.85],[6.8,4.45,.62],[-8.0,.1,.55],[8.0,.3,.58]]
     .forEach(v=>addTree(v[0],v[1],v[2]));
 
-  // Tiny keep beyond the back edge.
   const keep = new THREE.Group();
   const keepBody = new THREE.Mesh(new THREE.BoxGeometry(1.55,1.0,1.1),stoneMat);
   keepBody.position.y=.5;
@@ -1919,8 +1929,7 @@
   keep.position.set(0,0,-4.75);
   world.add(keep);
 
-  // Ambient firefly-like particles.
-  const dustCount=90;
+  const dustCount=50;
   const dustPos=new Float32Array(dustCount*3);
   for(let i=0;i<dustCount;i++){
     dustPos[i*3]=(Math.random()-.5)*20;
@@ -1929,29 +1938,12 @@
   }
   const dustGeo=new THREE.BufferGeometry();
   dustGeo.setAttribute('position',new THREE.BufferAttribute(dustPos,3));
-  const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xffe2a1,size:.035,transparent:true,opacity:.38,depthWrite:false}));
+  const dust=new THREE.Points(
+    dustGeo,
+    new THREE.PointsMaterial({color:0xffe2a1,size:.034,transparent:true,opacity:.32,depthWrite:false})
+  );
   scene.add(dust);
 
-  function makeLabelTexture(text,color='#fff4ce') {
-    const cnv=document.createElement('canvas');
-    cnv.width=512; cnv.height=128;
-    const ctx=cnv.getContext('2d');
-    ctx.clearRect(0,0,512,128);
-    ctx.fillStyle='rgba(24,18,12,.72)';
-    roundRect(ctx,10,20,492,88,24);
-    ctx.fill();
-    ctx.strokeStyle='rgba(235,202,126,.72)';
-    ctx.lineWidth=4;
-    roundRect(ctx,10,20,492,88,24);
-    ctx.stroke();
-    ctx.fillStyle=color;
-    ctx.font='800 42px system-ui, sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(text.slice(0,18),256,65);
-    const tex=new THREE.CanvasTexture(cnv);
-    tex.colorSpace=THREE.SRGBColorSpace;
-    return tex;
-  }
   function roundRect(ctx,x,y,w,h,r){
     ctx.beginPath();
     ctx.moveTo(x+r,y);
@@ -1962,51 +1954,98 @@
     ctx.closePath();
   }
 
+  function makeLabelTexture(text,color='#fff4ce') {
+    const cnv=document.createElement('canvas');
+    cnv.width=384;
+    cnv.height=96;
+    const ctx=cnv.getContext('2d');
+    ctx.fillStyle='rgba(24,18,12,.72)';
+    roundRect(ctx,8,15,368,66,18);
+    ctx.fill();
+    ctx.strokeStyle='rgba(235,202,126,.72)';
+    ctx.lineWidth=3;
+    roundRect(ctx,8,15,368,66,18);
+    ctx.stroke();
+    ctx.fillStyle=color;
+    ctx.font='800 31px system-ui, sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(String(text || '').slice(0,18),192,49);
+    const tex=new THREE.CanvasTexture(cnv);
+    tex.colorSpace=THREE.SRGBColorSpace;
+    return tex;
+  }
+
   function makeMeeple(player) {
     const g=new THREE.Group();
-    const color=new THREE.Color(player.color || '#3568b8');
-    const mat=new THREE.MeshStandardMaterial({color,roughness:.46,metalness:.08});
+    const mat=new THREE.MeshStandardMaterial({
+      color:new THREE.Color(player.color || '#3568b8'),
+      roughness:.46,
+      metalness:.08
+    });
     const trim=new THREE.MeshStandardMaterial({color:0xf6edcf,roughness:.65});
 
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.22,22,16),mat);
-    head.position.y=1.08; head.castShadow=true;
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.22,18,14),mat);
+    head.position.y=1.08;
+    head.castShadow=true;
 
     const torso=new THREE.Mesh(new THREE.CylinderGeometry(.24,.36,.58,10),mat);
-    torso.position.y=.66; torso.castShadow=true;
+    torso.position.y=.66;
+    torso.castShadow=true;
 
     const armGeo=new THREE.BoxGeometry(.16,.48,.18);
-    const armL=new THREE.Mesh(armGeo,mat); armL.position.set(-.34,.68,0); armL.rotation.z=-.55; armL.castShadow=true;
-    const armR=new THREE.Mesh(armGeo,mat); armR.position.set(.34,.68,0); armR.rotation.z=.55; armR.castShadow=true;
+    const armL=new THREE.Mesh(armGeo,mat);
+    armL.position.set(-.34,.68,0);
+    armL.rotation.z=-.55;
+    armL.castShadow=true;
+    const armR=new THREE.Mesh(armGeo,mat);
+    armR.position.set(.34,.68,0);
+    armR.rotation.z=.55;
+    armR.castShadow=true;
 
     const legGeo=new THREE.BoxGeometry(.18,.45,.2);
-    const legL=new THREE.Mesh(legGeo,mat); legL.position.set(-.14,.24,0); legL.rotation.z=.12; legL.castShadow=true;
-    const legR=new THREE.Mesh(legGeo,mat); legR.position.set(.14,.24,0); legR.rotation.z=-.12; legR.castShadow=true;
+    const legL=new THREE.Mesh(legGeo,mat);
+    legL.position.set(-.14,.24,0);
+    legL.rotation.z=.12;
+    legL.castShadow=true;
+    const legR=new THREE.Mesh(legGeo,mat);
+    legR.position.set(.14,.24,0);
+    legR.rotation.z=-.12;
+    legR.castShadow=true;
 
-    const baseDisc=new THREE.Mesh(new THREE.CylinderGeometry(.40,.44,.07,24),trim);
-    baseDisc.position.y=.025; baseDisc.receiveShadow=true;
+    const baseDisc=new THREE.Mesh(new THREE.CylinderGeometry(.40,.44,.07,20),trim);
+    baseDisc.position.y=.025;
+    baseDisc.receiveShadow=true;
 
-    const labelMat=new THREE.SpriteMaterial({map:makeLabelTexture(player.name),transparent:true,depthWrite:false});
+    const labelMat=new THREE.SpriteMaterial({
+      map:makeLabelTexture(player.name),
+      transparent:true,
+      depthWrite:false
+    });
     const label=new THREE.Sprite(labelMat);
-    label.scale.set(1.75,.44,1);
-    label.position.set(0,1.68,0);
+    label.scale.set(1.62,.40,1);
+    label.position.set(0,1.62,0);
 
     g.add(baseDisc,legL,legR,torso,armL,armR,head,label);
     g.scale.setScalar(.68);
     g.userData.label=label;
     g.userData.labelName=player.name;
     g.userData.colorMat=mat;
-    g.userData.score=Number(player.score)||0;
     world.add(g);
     return g;
   }
 
-  const meeples=new Map();
+  const controllers=new Map();
   const offsets=[
     [0,0],[-.28,-.18],[.28,-.18],[-.28,.18],[.28,.18],[0,.31]
   ];
 
+  function visibleScore(score) {
+    return Math.max(0, Number(score) || 0);
+  }
+
   function scorePosition(score, offsetIndex=0) {
-    const safe=Math.max(0,Number(score)||0);
+    const safe=visibleScore(score);
     const basePos=cellPositions[safe%50].clone();
     const off=offsets[offsetIndex]||[0,0];
     basePos.x+=off[0];
@@ -2015,93 +2054,182 @@
     return basePos;
   }
 
+  function buildPath(fromScore,toScore,finalOffsetIndex) {
+    const path=[];
+    const from=Number(fromScore)||0;
+    const to=Number(toScore)||0;
+    const direction=to>=from ? 1 : -1;
+    const steps=Math.abs(to-from);
+
+    if(steps===0){
+      path.push(scorePosition(to,finalOffsetIndex));
+      return path;
+    }
+
+    if(steps<=24){
+      for(let s=from+direction; direction>0 ? s<=to : s>=to; s+=direction){
+        const isFinal=s===to;
+        path.push(scorePosition(s,isFinal ? finalOffsetIndex : 0));
+      }
+    } else {
+      path.push(scorePosition(to,finalOffsetIndex));
+    }
+    return path;
+  }
+
+  function startNextMove(ctrl) {
+    if(ctrl.animation || ctrl.displayedScore===ctrl.targetScore) return false;
+
+    const points=[ctrl.object.position.clone(), ...buildPath(ctrl.displayedScore,ctrl.targetScore,ctrl.offsetIndex)];
+    const hopCount=Math.max(1,points.length-1);
+    ctrl.animation={
+      points,
+      started:performance.now(),
+      duration:Math.min(3000,520+hopCount*115),
+      fromScore:ctrl.displayedScore,
+      toScore:ctrl.targetScore
+    };
+    return true;
+  }
+
+  function updateControllerStaticPosition(ctrl) {
+    if(!ctrl.animation){
+      ctrl.object.position.copy(scorePosition(ctrl.displayedScore,ctrl.offsetIndex));
+    }
+  }
+
+  function disposeObject(root) {
+    const geometries=new Set();
+    const materials=new Set();
+    const textures=new Set();
+    root.traverse(child=>{
+      if(child.geometry) geometries.add(child.geometry);
+      if(child.material){
+        const list=Array.isArray(child.material)?child.material:[child.material];
+        list.forEach(mat=>{
+          materials.add(mat);
+          if(mat.map) textures.add(mat.map);
+        });
+      }
+    });
+    textures.forEach(t=>t.dispose());
+    materials.forEach(m=>m.dispose());
+    geometries.forEach(g=>g.dispose());
+  }
+
   function syncPlayers(players) {
     const groups={};
     players.forEach(p=>{
-      const key=String(Math.max(0,Number(p.score)||0)%50);
+      const key=String(visibleScore(p.score)%50);
       (groups[key]||(groups[key]=[])).push(p);
     });
 
+    const offsetById=new Map();
+    Object.values(groups).forEach(group=>{
+      group.forEach((p,index)=>offsetById.set(p.id,index));
+    });
+
     const alive=new Set(players.map(p=>p.id));
-    for(const [id,obj] of meeples){
+    for(const [id,ctrl] of controllers){
       if(!alive.has(id)){
-        world.remove(obj);
-        obj.traverse(ch=>{ if(ch.geometry) ch.geometry.dispose?.(); if(ch.material?.map) ch.material.map.dispose?.(); ch.material?.dispose?.(); });
-        meeples.delete(id);
+        world.remove(ctrl.object);
+        disposeObject(ctrl.object);
+        controllers.delete(id);
       }
     }
 
-    Object.values(groups).forEach(group=>{
-      group.forEach((p,index)=>{
-        let obj=meeples.get(p.id);
-        if(!obj){
-          obj=makeMeeple(p);
-          obj.position.copy(scorePosition(p.score,index));
-          obj.userData.score=Number(p.score)||0;
-          meeples.set(p.id,obj);
-          return;
-        }
+    players.forEach(p=>{
+      const newScore=Number(p.score)||0;
+      const newOffset=offsetById.get(p.id)||0;
+      let ctrl=controllers.get(p.id);
 
-        // Update only the shared Meeple material, not every child mesh.
-        if (obj.userData.colorMat && obj.userData.colorMat.color) {
-          obj.userData.colorMat.color.set(p.color);
-        }
-
-        // Rebuild the label texture only when the player's name actually changes.
-        if (obj.userData.label && obj.userData.labelName !== p.name) {
-          const oldMap = obj.userData.label.material?.map;
-          const newMap = makeLabelTexture(p.name);
-          obj.userData.label.material.map = newMap;
-          obj.userData.label.material.needsUpdate = true;
-          obj.userData.labelName = p.name;
-          if (oldMap) oldMap.dispose();
-        }
-
-        const oldScore=Number(obj.userData.score)||0;
-        const newScore=Number(p.score)||0;
-        const targetPos=scorePosition(newScore,index);
-        if(oldScore===newScore){
-          obj.position.copy(targetPos);
-          return;
-        }
-
-        const path=[obj.position.clone()];
-        const delta=newScore-oldScore;
-        if(delta>0 && delta<=20){
-          for(let s=oldScore+1;s<=newScore;s++) path.push(scorePosition(s,0));
-          path[path.length-1]=targetPos;
-        } else {
-          path.push(targetPos);
-        }
-        obj.userData.anim={
-          path,
-          started:performance.now(),
-          duration:Math.min(2600,650+Math.max(1,path.length-1)*120)
+      if(!ctrl){
+        const object=makeMeeple(p);
+        ctrl={
+          object,
+          displayedScore:newScore,
+          targetScore:newScore,
+          offsetIndex:newOffset,
+          animation:null
         };
-        obj.userData.score=newScore;
-      });
+        object.position.copy(scorePosition(newScore,newOffset));
+        controllers.set(p.id,ctrl);
+        return;
+      }
+
+      ctrl.offsetIndex=newOffset;
+      ctrl.targetScore=newScore;
+
+      if(ctrl.object.userData.colorMat){
+        ctrl.object.userData.colorMat.color.set(p.color);
+      }
+
+      if(ctrl.object.userData.label && ctrl.object.userData.labelName!==p.name){
+        const oldMap=ctrl.object.userData.label.material?.map;
+        ctrl.object.userData.label.material.map=makeLabelTexture(p.name);
+        ctrl.object.userData.label.material.needsUpdate=true;
+        ctrl.object.userData.labelName=p.name;
+        if(oldMap) oldMap.dispose();
+      }
+
+      if(!ctrl.animation){
+        if(ctrl.displayedScore!==ctrl.targetScore){
+          startNextMove(ctrl);
+        } else {
+          updateControllerStaticPosition(ctrl);
+        }
+      }
     });
+
+    invalidate();
   }
 
-  function updateMeepleAnimations(now) {
-    for(const obj of meeples.values()){
-      const a=obj.userData.anim;
+  function easeInOutCubic(t){
+    return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+  }
+
+  function updateAnimations(now) {
+    let active=false;
+
+    for(const ctrl of controllers.values()){
+      const a=ctrl.animation;
       if(!a) continue;
+      active=true;
+
       const t=Math.min(1,(now-a.started)/a.duration);
-      const segCount=a.path.length-1;
-      const scaled=t*segCount;
-      const seg=Math.min(segCount-1,Math.floor(scaled));
-      const local=segCount===1?t:scaled-seg;
-      const p0=a.path[seg];
-      const p1=a.path[Math.min(seg+1,a.path.length-1)];
-      obj.position.lerpVectors(p0,p1,local);
-      obj.position.y += Math.sin(local*Math.PI)*.62;
-      obj.rotation.y += .055;
+      const segmentCount=a.points.length-1;
+
+      if(segmentCount<=0){
+        ctrl.object.position.copy(a.points[0]);
+      } else {
+        const scaled=t*segmentCount;
+        const seg=Math.min(segmentCount-1,Math.floor(scaled));
+        const localRaw=segmentCount===1 ? t : scaled-seg;
+        const local=easeInOutCubic(localRaw);
+        const p0=a.points[seg];
+        const p1=a.points[Math.min(seg+1,a.points.length-1)];
+
+        ctrl.object.position.lerpVectors(p0,p1,local);
+        ctrl.object.position.y += Math.sin(localRaw*Math.PI)*.62;
+        ctrl.object.rotation.y += .05;
+      }
+
       if(t>=1){
-        obj.position.copy(a.path[a.path.length-1]);
-        obj.userData.anim=null;
+        ctrl.object.position.copy(a.points[a.points.length-1]);
+        ctrl.displayedScore=a.toScore;
+        ctrl.animation=null;
+        ctrl.object.rotation.y=0;
+
+        if(ctrl.displayedScore!==ctrl.targetScore){
+          startNextMove(ctrl);
+          active=true;
+        } else {
+          updateControllerStaticPosition(ctrl);
+        }
       }
     }
+
+    return active;
   }
 
   function updateCamera() {
@@ -2115,6 +2243,52 @@
   }
   updateCamera();
 
+  let rafId=0;
+  let previousFrame=performance.now();
+
+  function show3dError(message) {
+    sceneFailed=true;
+    status.classList.remove('ready');
+    status.classList.add('error');
+    status.textContent=message;
+  }
+
+  function invalidate() {
+    if(sceneFailed || rafId) return;
+    rafId=requestAnimationFrame(frame);
+  }
+
+  function frame(now) {
+    rafId=0;
+    if(sceneFailed) return;
+
+    try {
+      const dt=Math.min(.05,(now-previousFrame)/1000);
+      previousFrame=now;
+
+      let keepRendering=false;
+
+      if(autoSpin){
+        yaw += dt*.18;
+        updateCamera();
+        keepRendering=true;
+      }
+
+      if(updateAnimations(now)){
+        keepRendering=true;
+      }
+
+      renderer.render(scene,camera);
+
+      if(keepRendering){
+        invalidate();
+      }
+    } catch(error) {
+      console.error('Meeple 3D render failed',error);
+      show3dError('ฉาก 3D หยุดทำงานชั่วคราว • คะแนนหลักยังใช้งานได้');
+    }
+  }
+
   const pointers=new Map();
   let pinchStart=null;
   let pinchDistanceStart=distance;
@@ -2122,71 +2296,74 @@
   canvas.addEventListener('pointerdown',e=>{
     canvas.setPointerCapture?.(e.pointerId);
     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY});
-    lastInteraction=performance.now();
     if(pointers.size===2){
       const a=[...pointers.values()];
       pinchStart=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
       pinchDistanceStart=distance;
     }
   });
+
   canvas.addEventListener('pointermove',e=>{
     const p=pointers.get(e.pointerId);
     if(!p) return;
-    p.px=p.x; p.py=p.y; p.x=e.clientX; p.y=e.clientY;
-    lastInteraction=performance.now();
+    p.px=p.x;
+    p.py=p.y;
+    p.x=e.clientX;
+    p.y=e.clientY;
 
     if(pointers.size===1){
       yaw -= (p.x-p.px)*.0065;
-      pitch = Math.max(.28,Math.min(1.12,pitch+(p.y-p.py)*.005));
+      pitch=Math.max(.28,Math.min(1.12,pitch+(p.y-p.py)*.005));
       updateCamera();
+      invalidate();
     } else if(pointers.size===2 && pinchStart){
       const a=[...pointers.values()];
       const current=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
-      distance=Math.max(12.5,Math.min(29,pinchDistanceStart*(pinchStart/current)));
-      updateCamera();
+      if(current>0){
+        distance=Math.max(12.5,Math.min(29,pinchDistanceStart*(pinchStart/current)));
+        updateCamera();
+        invalidate();
+      }
     }
   });
+
   function endPointer(e){
     pointers.delete(e.pointerId);
     if(pointers.size<2) pinchStart=null;
-    lastInteraction=performance.now();
   }
   canvas.addEventListener('pointerup',endPointer);
   canvas.addEventListener('pointercancel',endPointer);
+
   canvas.addEventListener('wheel',e=>{
     e.preventDefault();
     distance=Math.max(12.5,Math.min(29,distance+e.deltaY*.012));
-    lastInteraction=performance.now();
     updateCamera();
+    invalidate();
   },{passive:false});
 
   resetBtn?.addEventListener('click',()=>{
-    yaw=.03; pitch=.62; distance=21.5; updateCamera();
+    yaw=.03;
+    pitch=.62;
+    distance=21.5;
+    updateCamera();
+    invalidate();
   });
+
   spinBtn?.addEventListener('click',()=>{
     autoSpin=!autoSpin;
     spinBtn.textContent=autoSpin?'⏸ หยุดหมุน':'⟳ หมุน';
+    invalidate();
   });
 
-  let sceneFailed = false;
-
-  function show3dError(message) {
-    sceneFailed = true;
-    status.classList.remove('ready');
-    status.classList.add('error');
-    status.textContent = message;
-  }
-
-  canvas.addEventListener('webglcontextlost', event => {
+  canvas.addEventListener('webglcontextlost',event=>{
     event.preventDefault();
-    show3dError('ระบบ 3D หยุดชั่วคราวจาก WebGL context • กำลังกู้คืนฉาก…');
+    show3dError('WebGL context หยุดทำงาน • กำลังกู้คืนฉาก…');
   });
 
-  canvas.addEventListener('webglcontextrestored', () => {
+  canvas.addEventListener('webglcontextrestored',()=>{
     status.classList.remove('error');
-    status.textContent = 'กำลังกู้คืนฉาก 3D…';
-    // Rebuilding all GPU resources is safest after a context restore.
-    window.setTimeout(() => window.location.reload(), 250);
+    status.textContent='กำลังกู้คืนฉาก 3D…';
+    window.setTimeout(()=>window.location.reload(),250);
   });
 
   const resize=()=>{
@@ -2195,49 +2372,29 @@
     renderer.setSize(w,h,false);
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
+    invalidate();
   };
+
   new ResizeObserver(resize).observe(shell);
   resize();
 
-  const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  let previous=performance.now();
-  function frame(now){
-    try {
-      if (!sceneFailed) {
-        const dt=Math.min(.05,(now-previous)/1000);
-        previous=now;
-        if(autoSpin && !reducedMotion && pointers.size===0){
-          yaw += dt*.18;
-          updateCamera();
-        } else if(!reducedMotion && pointers.size===0 && now-lastInteraction>6500){
-          yaw += dt*.018;
-          updateCamera();
-        }
-        dust.rotation.y += dt*.012;
-        updateMeepleAnimations(now);
-        renderer.render(scene,camera);
-      }
-    } catch (error) {
-      console.error('Meeple 3D render failed', error);
-      show3dError('ฉาก 3D หยุดทำงานชั่วคราว • คะแนนหลักยังใช้งานได้');
-    }
-    requestAnimationFrame(frame);
-  }
-
   function safeSyncPlayers(players) {
-    if (sceneFailed) return;
+    if(sceneFailed) return;
     try {
-      syncPlayers(players);
-    } catch (error) {
-      console.error('Meeple 3D sync failed', error);
+      syncPlayers(Array.isArray(players)?players:[]);
+    } catch(error) {
+      console.error('Meeple 3D sync failed',error);
       show3dError('เกิดข้อผิดพลาดขณะอัปเดตตัวหมาก 3D • คะแนนยังถูกบันทึกอยู่');
     }
   }
 
-  window.addEventListener('meeple3d:update',e=>safeSyncPlayers(e.detail?.players||[]));
+  window.addEventListener('meeple3d:update',e=>{
+    safeSyncPlayers(e.detail?.players||[]);
+  });
+
   safeSyncPlayers(window.__meeple3dPlayers||[]);
-  if (!sceneFailed) status.classList.add('ready');
-  requestAnimationFrame(frame);
+  status.classList.add('ready');
+  invalidate();
 })();
 </script>
 
