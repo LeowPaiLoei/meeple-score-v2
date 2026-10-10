@@ -13,7 +13,7 @@ An experimental visual redesign of **Meeple Score**, built as a separate reposit
 - City, Road, Church / Flower, Farmer, and Goods scoring
 - Chicken, Cloth, and Rice goods
 - Per-player recent score history
-- Live pseudo-3D 50-space score track with lap indicators
+- Real WebGL 3D score realm with interactive camera, lighting, shadows, animated Meeples, and lap indicators
 - Desktop-specific large-screen polish with expanded layout and track
 - Tied-score competition ranking (e.g. 1, 1, 3)
 - Decorative medieval score-action plaque and enriched background scenery
@@ -34,3 +34,8 @@ The stable app remains in the original `meeple-score` repository. This V2 reposi
 ---
 
 Designed as an original medieval-inspired tabletop interface.
+
+
+## Backup branch
+
+The pre-WebGL V2 design is preserved on the `v2-medieval-backup` branch.
