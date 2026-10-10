@@ -881,6 +881,128 @@
     }
   </style>
 
+
+  <style id="true-3d-score-realm">
+    .track-section-true3d {
+      background:
+        radial-gradient(circle at 50% 120%,rgba(113,83,43,.24),transparent 48%),
+        linear-gradient(180deg,#4a2d1a 0%,#2c1b12 100%);
+      overflow:hidden;
+    }
+    .track-header-3d {
+      align-items:flex-start;
+      position:relative;
+      z-index:5;
+    }
+    .track-head-right {
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+    }
+    .track-tools { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+    .track-tool {
+      min-height:32px;
+      padding:0 10px;
+      border:1px solid rgba(226,190,110,.45);
+      border-radius:999px;
+      background:linear-gradient(#f9e7b5,#d6ae63);
+      color:#4a301b;
+      font-size:11px;
+      font-weight:900;
+      box-shadow:inset 0 1px rgba(255,255,255,.72),0 3px 7px rgba(0,0,0,.18);
+    }
+    .track-tool:active { transform:translateY(1px); }
+    .track-stage-3d {
+      padding:4px 8px 8px !important;
+      margin:0 !important;
+      overflow:visible !important;
+    }
+    .track-3d-shell {
+      position:relative;
+      width:100%;
+      height:clamp(330px,36vw,520px);
+      min-height:330px;
+      overflow:hidden;
+      border:1px solid rgba(235,202,126,.38);
+      border-radius:18px;
+      background:
+        radial-gradient(circle at 50% 38%,rgba(92,119,73,.18),transparent 42%),
+        linear-gradient(180deg,#17231b 0%,#0d1511 62%,#090d0b 100%);
+      box-shadow:
+        inset 0 0 0 2px rgba(255,224,148,.06),
+        inset 0 -30px 60px rgba(0,0,0,.25),
+        0 8px 18px rgba(0,0,0,.22);
+    }
+    #scoreTrack3d {
+      display:block;
+      width:100%;
+      height:100%;
+      touch-action:none;
+      cursor:grab;
+      outline:none;
+    }
+    #scoreTrack3d:active { cursor:grabbing; }
+    .track-3d-status {
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      z-index:3;
+      color:#f3dfaa;
+      font:700 13px/1.4 system-ui,sans-serif;
+      letter-spacing:.01em;
+      pointer-events:none;
+      background:radial-gradient(circle,rgba(41,55,42,.32),rgba(10,15,12,.56));
+      transition:opacity .35s ease;
+    }
+    .track-3d-status.ready { opacity:0; }
+    .track-3d-status.error {
+      opacity:1;
+      padding:20px;
+      text-align:center;
+      color:#f7d5ae;
+      background:rgba(30,18,13,.78);
+    }
+    .track-3d-hint {
+      position:absolute;
+      z-index:2;
+      left:12px;
+      bottom:10px;
+      padding:5px 9px;
+      border:1px solid rgba(235,202,126,.20);
+      border-radius:999px;
+      background:rgba(14,19,15,.55);
+      color:rgba(255,238,193,.72);
+      font-size:9px;
+      font-weight:800;
+      pointer-events:none;
+      backdrop-filter:blur(4px);
+    }
+
+    @media (min-width:1300px) {
+      .track-section-true3d { padding:10px 12px 12px !important; }
+      .track-stage-3d { padding:2px 4px 4px !important; }
+      .track-3d-shell { height:clamp(390px,32vw,540px); }
+      .track-header-3d h2 { font-size:21px !important; }
+      .track-header-3d p { display:block !important; font-size:11px !important; }
+      .track-head-right { max-width:72%; }
+    }
+
+    @media (max-width:900px) {
+      .track-header-3d { gap:8px; }
+      .track-head-right { max-width:58%; }
+      .track-tools { gap:4px; }
+      .track-tool { min-height:29px; padding:0 8px; font-size:10px; }
+      .track-3d-shell { height:clamp(300px,48vw,410px); min-height:300px; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      .track-3d-status { transition:none; }
+    }
+  </style>
+
 </head>
 <body>
   <main class="app">
@@ -902,17 +1024,25 @@
 
     <section class="score-grid" id="scoreGrid" aria-live="polite"></section>
 
-    <section class="track-section" aria-labelledby="trackTitle">
-      <div class="track-header">
+    <section class="track-section track-section-true3d" aria-labelledby="trackTitle">
+      <div class="track-header track-header-3d">
         <div>
-          <h2 id="trackTitle">🏰 Live Score Track</h2>
-          <p>กระดานคะแนนแบบ 3D • ตัวหมากขยับตามคะแนนจริง</p>
+          <h2 id="trackTitle">🏰 3D Score Realm</h2>
+          <p>ลากเพื่อหมุน • เลื่อน/บีบนิ้วเพื่อซูม • Meeple เคลื่อนตามคะแนนจริง</p>
         </div>
-        <div class="track-legend" id="trackLegend"></div>
+        <div class="track-head-right">
+          <div class="track-tools">
+            <button class="track-tool" id="reset3dView" type="button">↻ มุมมอง</button>
+            <button class="track-tool" id="toggle3dSpin" type="button">⟳ หมุน</button>
+          </div>
+          <div class="track-legend" id="trackLegend"></div>
+        </div>
       </div>
-      <div class="track-stage">
-        <div class="track-board">
-          <svg id="scoreTrackSvg" viewBox="0 0 1000 350" role="img" aria-label="กระดานตำแหน่งคะแนนของผู้เล่น"></svg>
+      <div class="track-stage track-stage-3d">
+        <div class="track-3d-shell" id="track3dShell">
+          <canvas id="scoreTrack3d" aria-label="กระดานคะแนนสามมิติแบบโต้ตอบ"></canvas>
+          <div class="track-3d-status" id="track3dStatus">กำลังเปิดฉาก 3D…</div>
+          <div class="track-3d-hint">ลากเพื่อหมุน • Scroll / Pinch เพื่อซูม</div>
         </div>
       </div>
     </section>
@@ -1171,28 +1301,9 @@
     el('gameInfo').textContent = state.players.length+' ผู้เล่น • เริ่ม '+start.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
   }
 
-  function scoreCellPosition(score) {
-    var safe = Math.max(0, Number(score) || 0);
-    var pos = safe % 50;
-    var row = Math.floor(pos / 10);
-    var local = pos % 10;
-    var col = row % 2 === 0 ? local : 9 - local;
-    return {
-      x:78 + col * 94,
-      y:70 + row * 50,
-      lap:Math.floor(safe / 50),
-      pos:pos
-    };
-  }
-
-  function svgEscape(s) {
-    return escapeHtml(s).replace(/\n/g,' ');
-  }
-
   function renderScoreTrack() {
-    var svg = el('scoreTrackSvg');
     var legend = el('trackLegend');
-    if (!svg || !legend) return;
+    if (!legend) return;
 
     legend.innerHTML = state.players.map(function(p){
       var safe = Math.max(0,Number(p.score)||0);
@@ -1204,80 +1315,11 @@
       '</span>';
     }).join('');
 
-    var defs =
-      '<defs>' +
-        '<linearGradient id="grass" x1="0" y1="0" x2="1" y2="1">' +
-          '<stop offset="0%" stop-color="#91b665"/><stop offset="58%" stop-color="#769d55"/><stop offset="100%" stop-color="#5f8446"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0%" stop-color="#a97743"/><stop offset="100%" stop-color="#6f4729"/>' +
-        '</linearGradient>' +
-        '<filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">' +
-          '<feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#2d2419" flood-opacity=".28"/>' +
-        '</filter>' +
-      '</defs>';
-
-    var board =
-      '<rect x="20" y="18" width="960" height="310" rx="30" fill="url(#wood)"/>' +
-      '<rect x="33" y="29" width="934" height="283" rx="23" fill="url(#grass)" stroke="#d8c38d" stroke-width="4"/>' +
-      '<path d="M60 290 C180 220, 210 230, 315 175 S500 90, 645 160 S810 245, 940 90" fill="none" stroke="#d8be7a" stroke-width="18" stroke-linecap="round" opacity=".58"/>' +
-      '<path d="M60 290 C180 220, 210 230, 315 175 S500 90, 645 160 S810 245, 940 90" fill="none" stroke="#a78650" stroke-width="3" stroke-dasharray="7 9" opacity=".5"/>' +
-      '<g opacity=".9">' +
-        '<rect x="455" y="139" width="90" height="55" rx="9" fill="#d9c28b" stroke="#684a32" stroke-width="3"/>' +
-        '<path d="M448 145 L500 105 L552 145 Z" fill="#a65342" stroke="#684a32" stroke-width="3"/>' +
-        '<rect x="492" y="163" width="18" height="31" fill="#684a32"/>' +
-        '<circle cx="500" cy="132" r="8" fill="#f2e5b8"/>' +
-      '</g>';
-
-    var cells = '';
-    for (var i=0;i<50;i++) {
-      var pos = scoreCellPosition(i);
-      var special = i % 10 === 0;
-      cells +=
-        '<g>' +
-          '<rect x="'+(pos.x-38)+'" y="'+(pos.y-19)+'" width="76" height="38" rx="10" ' +
-            'fill="'+(special ? '#f6df9b' : '#f3e8c6')+'" fill-opacity=".95" stroke="'+(special ? '#8c672d' : '#867b5d')+'" stroke-width="'+(special ? '2.6' : '1.5')+'" />' +
-          '<text class="track-cell-number" x="'+pos.x+'" y="'+pos.y+'">'+i+'</text>' +
-        '</g>';
-    }
-
-    var grouped = {};
-    state.players.forEach(function(p){
-      var pos = scoreCellPosition(p.score);
-      var key = String(pos.pos);
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push({player:p,meta:pos});
+    var snapshot = state.players.map(function(p){
+      return { id:p.id, name:p.name, color:p.color, score:Number(p.score)||0 };
     });
-
-    var offsets = [
-      [0,0],[-17,-10],[17,-10],[-17,11],[17,11],[0,-18],[0,18]
-    ];
-    var markers = '';
-    Object.keys(grouped).forEach(function(key){
-      grouped[key].forEach(function(entry,index){
-        var p = entry.player;
-        var m = entry.meta;
-        var off = offsets[index] || [((index%3)-1)*16,(Math.floor(index/3)-1)*12];
-        var x = m.x + off[0];
-        var y = m.y + off[1];
-        var shortName = String(p.name || '').trim().slice(0,4);
-        markers +=
-          '<g class="track-marker" transform="translate('+x+' '+y+')" filter="url(#softShadow)">' +
-            '<circle cx="0" cy="-8" r="7" fill="'+p.color+'" stroke="#fff" stroke-width="2"/>' +
-            '<path d="M-9 2 Q0 -3 9 2 L12 14 L-12 14 Z" fill="'+p.color+'" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>' +
-            '<text class="track-marker-name" x="0" y="27">'+svgEscape(shortName)+'</text>' +
-            (m.lap > 0
-              ? '<g transform="translate(15 -17)"><circle r="10" fill="#2d2924" stroke="#fff" stroke-width="1.5"/><text class="track-lap-badge" x="0" y=".5">'+m.lap+'</text></g>'
-              : '') +
-          '</g>';
-      });
-    });
-
-    var labels =
-      '<text x="55" y="48" font-size="12" font-weight="900" fill="#eef4dc">START</text>' +
-      '<text x="945" y="304" font-size="10" text-anchor="end" fill="#e4efd0">50 ช่อง • วนรอบเมื่อเกิน 49</text>';
-
-    svg.innerHTML = defs + board + cells + markers + labels;
+    window.__meeple3dPlayers = snapshot;
+    window.dispatchEvent(new CustomEvent('meeple3d:update',{detail:{players:snapshot}}));
   }
 
   scoreGrid.addEventListener('change',function(e){
@@ -1687,5 +1729,478 @@
   if (!state.started) openSetup();
 })();
 </script>
+
+<script type="module">
+(async function () {
+  const canvas = document.getElementById('scoreTrack3d');
+  const shell = document.getElementById('track3dShell');
+  const status = document.getElementById('track3dStatus');
+  const resetBtn = document.getElementById('reset3dView');
+  const spinBtn = document.getElementById('toggle3dSpin');
+  if (!canvas || !shell || !status) return;
+
+  let THREE;
+  try {
+    THREE = await import('https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js');
+  } catch (error) {
+    status.classList.add('error');
+    status.textContent = 'ไม่สามารถโหลดระบบ 3D ได้ในขณะนี้ • ลองเชื่อมต่ออินเทอร์เน็ตแล้ว Refresh อีกครั้ง';
+    return;
+  }
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true, powerPreference:'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x101811, 0.025);
+
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  const target = new THREE.Vector3(0, 0.3, 0);
+  let yaw = 0.03;
+  let pitch = 0.62;
+  let distance = 21.5;
+  let autoSpin = false;
+  let lastInteraction = performance.now();
+
+  const hemi = new THREE.HemisphereLight(0xe8e0bd, 0x243021, 1.75);
+  scene.add(hemi);
+
+  const sun = new THREE.DirectionalLight(0xffe4aa, 3.1);
+  sun.position.set(-8, 15, 7);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048,2048);
+  sun.shadow.camera.left = -12;
+  sun.shadow.camera.right = 12;
+  sun.shadow.camera.top = 10;
+  sun.shadow.camera.bottom = -10;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 40;
+  scene.add(sun);
+
+  const warm = new THREE.PointLight(0xd48443, 28, 22, 2);
+  warm.position.set(7, 5, -4);
+  scene.add(warm);
+
+  const world = new THREE.Group();
+  scene.add(world);
+
+  const woodMat = new THREE.MeshStandardMaterial({ color:0x5e3a20, roughness:.62, metalness:.05 });
+  const darkWoodMat = new THREE.MeshStandardMaterial({ color:0x2d1b12, roughness:.72 });
+  const grassMat = new THREE.MeshStandardMaterial({ color:0x66864e, roughness:.93 });
+  const goldMat = new THREE.MeshStandardMaterial({ color:0xc89b48, roughness:.36, metalness:.45 });
+  const stoneMat = new THREE.MeshStandardMaterial({ color:0xc7b284, roughness:.88 });
+  const redRoofMat = new THREE.MeshStandardMaterial({ color:0x8b4737, roughness:.78 });
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(18.4,.72,11.3), woodMat);
+  base.position.y = -.55;
+  base.castShadow = true;
+  base.receiveShadow = true;
+  world.add(base);
+
+  const inset = new THREE.Mesh(new THREE.BoxGeometry(17.25,.22,10.15), grassMat);
+  inset.position.y = -.08;
+  inset.receiveShadow = true;
+  world.add(inset);
+
+  // Carved rails around the board.
+  [
+    [0,.22,-5.13,17.45,.36,.28],
+    [0,.22, 5.13,17.45,.36,.28],
+    [-8.65,.22,0,.28,.36,10.0],
+    [ 8.65,.22,0,.28,.36,10.0]
+  ].forEach(v => {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(v[3],v[4],v[5]), darkWoodMat);
+    rail.position.set(v[0],v[1],v[2]);
+    rail.castShadow = true;
+    world.add(rail);
+  });
+
+  function canvasTextureForCell(n) {
+    const cnv = document.createElement('canvas');
+    cnv.width = 256; cnv.height = 144;
+    const ctx = cnv.getContext('2d');
+    const special = n % 10 === 0;
+    const grad = ctx.createLinearGradient(0,0,0,144);
+    grad.addColorStop(0, special ? '#f7dea0' : '#f6e9c5');
+    grad.addColorStop(1, special ? '#d9b765' : '#ddcda7');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,256,144);
+    ctx.strokeStyle = special ? '#8a602c' : '#8b7a58';
+    ctx.lineWidth = special ? 10 : 6;
+    ctx.strokeRect(6,6,244,132);
+    ctx.fillStyle = '#3f3626';
+    ctx.font = '900 62px Georgia, serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(n),128,76);
+    const tex = new THREE.CanvasTexture(cnv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return tex;
+  }
+
+  const cellPositions = [];
+  const tileGeo = new THREE.BoxGeometry(1.42,.24,.88);
+  for (let i=0;i<50;i++) {
+    const row = Math.floor(i/10);
+    const local = i%10;
+    const col = row%2===0 ? local : 9-local;
+    const x = -7.2 + col*1.6;
+    const z = -3.35 + row*1.67;
+    cellPositions[i] = new THREE.Vector3(x,.26,z);
+
+    const tileMat = new THREE.MeshStandardMaterial({
+      map:canvasTextureForCell(i),
+      roughness:.75,
+      metalness:0
+    });
+    const tile = new THREE.Mesh(tileGeo,tileMat);
+    tile.position.set(x,.28,z);
+    tile.castShadow = true;
+    tile.receiveShadow = true;
+    world.add(tile);
+  }
+
+  // A softly glowing start medallion.
+  const startRing = new THREE.Mesh(
+    new THREE.TorusGeometry(.58,.055,18,64),
+    new THREE.MeshStandardMaterial({color:0xf0ca70,emissive:0x55370c,emissiveIntensity:.35,metalness:.55,roughness:.3})
+  );
+  startRing.rotation.x = Math.PI/2;
+  startRing.position.copy(cellPositions[0]).add(new THREE.Vector3(0,.18,0));
+  world.add(startRing);
+
+  // Medieval scenery around the score path.
+  function addTower(x,z,s=1) {
+    const g = new THREE.Group();
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(.34,.4,1.05,10),stoneMat);
+    tower.position.y=.52;
+    tower.castShadow=true;
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(.52,.62,10),redRoofMat);
+    roof.position.y=1.34;
+    roof.castShadow=true;
+    g.add(tower,roof);
+    g.position.set(x,0,z);
+    g.scale.setScalar(s);
+    world.add(g);
+  }
+  addTower(-8.0,-4.35,.8);
+  addTower( 8.0,-4.35,.8);
+
+  function addTree(x,z,s=1) {
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.08,.11,.48,7),new THREE.MeshStandardMaterial({color:0x5d3a20,roughness:1}));
+    trunk.position.y=.24;
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(.36,.9,9),new THREE.MeshStandardMaterial({color:0x315c39,roughness:.95}));
+    crown.position.y=.78;
+    trunk.castShadow=crown.castShadow=true;
+    g.add(trunk,crown);
+    g.position.set(x,0,z);
+    g.scale.setScalar(s);
+    world.add(g);
+  }
+  [[-7.8,4.3,.8],[-6.9,4.45,.65],[7.6,4.2,.85],[6.8,4.45,.62],[-8.0,.1,.55],[8.0,.3,.58]]
+    .forEach(v=>addTree(v[0],v[1],v[2]));
+
+  // Tiny keep beyond the back edge.
+  const keep = new THREE.Group();
+  const keepBody = new THREE.Mesh(new THREE.BoxGeometry(1.55,1.0,1.1),stoneMat);
+  keepBody.position.y=.5;
+  keepBody.castShadow=true;
+  const keepRoof = new THREE.Mesh(new THREE.ConeGeometry(1.15,.78,4),redRoofMat);
+  keepRoof.rotation.y=Math.PI/4;
+  keepRoof.position.y=1.38;
+  keepRoof.castShadow=true;
+  keep.add(keepBody,keepRoof);
+  keep.position.set(0,0,-4.75);
+  world.add(keep);
+
+  // Ambient firefly-like particles.
+  const dustCount=90;
+  const dustPos=new Float32Array(dustCount*3);
+  for(let i=0;i<dustCount;i++){
+    dustPos[i*3]=(Math.random()-.5)*20;
+    dustPos[i*3+1]=1.2+Math.random()*6;
+    dustPos[i*3+2]=(Math.random()-.5)*13;
+  }
+  const dustGeo=new THREE.BufferGeometry();
+  dustGeo.setAttribute('position',new THREE.BufferAttribute(dustPos,3));
+  const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xffe2a1,size:.035,transparent:true,opacity:.38,depthWrite:false}));
+  scene.add(dust);
+
+  function makeLabelTexture(text,color='#fff4ce') {
+    const cnv=document.createElement('canvas');
+    cnv.width=512; cnv.height=128;
+    const ctx=cnv.getContext('2d');
+    ctx.clearRect(0,0,512,128);
+    ctx.fillStyle='rgba(24,18,12,.72)';
+    roundRect(ctx,10,20,492,88,24);
+    ctx.fill();
+    ctx.strokeStyle='rgba(235,202,126,.72)';
+    ctx.lineWidth=4;
+    roundRect(ctx,10,20,492,88,24);
+    ctx.stroke();
+    ctx.fillStyle=color;
+    ctx.font='800 42px system-ui, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(text.slice(0,18),256,65);
+    const tex=new THREE.CanvasTexture(cnv);
+    tex.colorSpace=THREE.SRGBColorSpace;
+    return tex;
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function makeMeeple(player) {
+    const g=new THREE.Group();
+    const color=new THREE.Color(player.color || '#3568b8');
+    const mat=new THREE.MeshStandardMaterial({color,roughness:.46,metalness:.08});
+    const trim=new THREE.MeshStandardMaterial({color:0xf6edcf,roughness:.65});
+
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.22,22,16),mat);
+    head.position.y=1.08; head.castShadow=true;
+
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(.24,.36,.58,10),mat);
+    torso.position.y=.66; torso.castShadow=true;
+
+    const armGeo=new THREE.BoxGeometry(.16,.48,.18);
+    const armL=new THREE.Mesh(armGeo,mat); armL.position.set(-.34,.68,0); armL.rotation.z=-.55; armL.castShadow=true;
+    const armR=new THREE.Mesh(armGeo,mat); armR.position.set(.34,.68,0); armR.rotation.z=.55; armR.castShadow=true;
+
+    const legGeo=new THREE.BoxGeometry(.18,.45,.2);
+    const legL=new THREE.Mesh(legGeo,mat); legL.position.set(-.14,.24,0); legL.rotation.z=.12; legL.castShadow=true;
+    const legR=new THREE.Mesh(legGeo,mat); legR.position.set(.14,.24,0); legR.rotation.z=-.12; legR.castShadow=true;
+
+    const baseDisc=new THREE.Mesh(new THREE.CylinderGeometry(.40,.44,.07,24),trim);
+    baseDisc.position.y=.025; baseDisc.receiveShadow=true;
+
+    const labelMat=new THREE.SpriteMaterial({map:makeLabelTexture(player.name),transparent:true,depthWrite:false});
+    const label=new THREE.Sprite(labelMat);
+    label.scale.set(1.75,.44,1);
+    label.position.set(0,1.68,0);
+
+    g.add(baseDisc,legL,legR,torso,armL,armR,head,label);
+    g.scale.setScalar(.68);
+    g.userData.label=label;
+    g.userData.score=Number(player.score)||0;
+    world.add(g);
+    return g;
+  }
+
+  const meeples=new Map();
+  const offsets=[
+    [0,0],[-.28,-.18],[.28,-.18],[-.28,.18],[.28,.18],[0,.31]
+  ];
+
+  function scorePosition(score, offsetIndex=0) {
+    const safe=Math.max(0,Number(score)||0);
+    const basePos=cellPositions[safe%50].clone();
+    const off=offsets[offsetIndex]||[0,0];
+    basePos.x+=off[0];
+    basePos.z+=off[1];
+    basePos.y=.53;
+    return basePos;
+  }
+
+  function syncPlayers(players) {
+    const groups={};
+    players.forEach(p=>{
+      const key=String(Math.max(0,Number(p.score)||0)%50);
+      (groups[key]||(groups[key]=[])).push(p);
+    });
+
+    const alive=new Set(players.map(p=>p.id));
+    for(const [id,obj] of meeples){
+      if(!alive.has(id)){
+        world.remove(obj);
+        obj.traverse(ch=>{ if(ch.geometry) ch.geometry.dispose?.(); if(ch.material?.map) ch.material.map.dispose?.(); ch.material?.dispose?.(); });
+        meeples.delete(id);
+      }
+    }
+
+    Object.values(groups).forEach(group=>{
+      group.forEach((p,index)=>{
+        let obj=meeples.get(p.id);
+        if(!obj){
+          obj=makeMeeple(p);
+          obj.position.copy(scorePosition(p.score,index));
+          obj.userData.score=Number(p.score)||0;
+          meeples.set(p.id,obj);
+          return;
+        }
+
+        // Keep the 3D color in sync with the chosen player color.
+        obj.traverse(ch=>{
+          if(ch.isMesh && ch.material && ch.material.color && ch !== obj.children[0]){
+            if(ch.material.metalness !== undefined && ch.material.color.getHex() !== 0xf6edcf){
+              // Only update colored meeple parts, not the pale base.
+              if(ch.material.roughness < .6) ch.material.color.set(p.color);
+            }
+          }
+        });
+
+        if(obj.userData.label?.material?.map){
+          obj.userData.label.material.map.dispose();
+          obj.userData.label.material.map=makeLabelTexture(p.name);
+          obj.userData.label.material.needsUpdate=true;
+        }
+
+        const oldScore=Number(obj.userData.score)||0;
+        const newScore=Number(p.score)||0;
+        const targetPos=scorePosition(newScore,index);
+        if(oldScore===newScore){
+          obj.position.copy(targetPos);
+          return;
+        }
+
+        const path=[obj.position.clone()];
+        const delta=newScore-oldScore;
+        if(delta>0 && delta<=20){
+          for(let s=oldScore+1;s<=newScore;s++) path.push(scorePosition(s,0));
+          path[path.length-1]=targetPos;
+        } else {
+          path.push(targetPos);
+        }
+        obj.userData.anim={
+          path,
+          started:performance.now(),
+          duration:Math.min(2600,650+Math.max(1,path.length-1)*120)
+        };
+        obj.userData.score=newScore;
+      });
+    });
+  }
+
+  function updateMeepleAnimations(now) {
+    for(const obj of meeples.values()){
+      const a=obj.userData.anim;
+      if(!a) continue;
+      const t=Math.min(1,(now-a.started)/a.duration);
+      const segCount=a.path.length-1;
+      const scaled=t*segCount;
+      const seg=Math.min(segCount-1,Math.floor(scaled));
+      const local=segCount===1?t:scaled-seg;
+      const p0=a.path[seg];
+      const p1=a.path[Math.min(seg+1,a.path.length-1)];
+      obj.position.lerpVectors(p0,p1,local);
+      obj.position.y += Math.sin(local*Math.PI)*.62;
+      obj.rotation.y += .055;
+      if(t>=1){
+        obj.position.copy(a.path[a.path.length-1]);
+        obj.userData.anim=null;
+      }
+    }
+  }
+
+  function updateCamera() {
+    const cp=Math.cos(pitch);
+    camera.position.set(
+      target.x + Math.sin(yaw)*cp*distance,
+      target.y + Math.sin(pitch)*distance,
+      target.z + Math.cos(yaw)*cp*distance
+    );
+    camera.lookAt(target);
+  }
+  updateCamera();
+
+  const pointers=new Map();
+  let pinchStart=null;
+  let pinchDistanceStart=distance;
+
+  canvas.addEventListener('pointerdown',e=>{
+    canvas.setPointerCapture?.(e.pointerId);
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY});
+    lastInteraction=performance.now();
+    if(pointers.size===2){
+      const a=[...pointers.values()];
+      pinchStart=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      pinchDistanceStart=distance;
+    }
+  });
+  canvas.addEventListener('pointermove',e=>{
+    const p=pointers.get(e.pointerId);
+    if(!p) return;
+    p.px=p.x; p.py=p.y; p.x=e.clientX; p.y=e.clientY;
+    lastInteraction=performance.now();
+
+    if(pointers.size===1){
+      yaw -= (p.x-p.px)*.0065;
+      pitch = Math.max(.28,Math.min(1.12,pitch+(p.y-p.py)*.005));
+      updateCamera();
+    } else if(pointers.size===2 && pinchStart){
+      const a=[...pointers.values()];
+      const current=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      distance=Math.max(12.5,Math.min(29,pinchDistanceStart*(pinchStart/current)));
+      updateCamera();
+    }
+  });
+  function endPointer(e){
+    pointers.delete(e.pointerId);
+    if(pointers.size<2) pinchStart=null;
+    lastInteraction=performance.now();
+  }
+  canvas.addEventListener('pointerup',endPointer);
+  canvas.addEventListener('pointercancel',endPointer);
+  canvas.addEventListener('wheel',e=>{
+    e.preventDefault();
+    distance=Math.max(12.5,Math.min(29,distance+e.deltaY*.012));
+    lastInteraction=performance.now();
+    updateCamera();
+  },{passive:false});
+
+  resetBtn?.addEventListener('click',()=>{
+    yaw=.03; pitch=.62; distance=21.5; updateCamera();
+  });
+  spinBtn?.addEventListener('click',()=>{
+    autoSpin=!autoSpin;
+    spinBtn.textContent=autoSpin?'⏸ หยุดหมุน':'⟳ หมุน';
+  });
+
+  const resize=()=>{
+    const w=Math.max(1,shell.clientWidth);
+    const h=Math.max(1,shell.clientHeight);
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  };
+  new ResizeObserver(resize).observe(shell);
+  resize();
+
+  const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let previous=performance.now();
+  function frame(now){
+    const dt=Math.min(.05,(now-previous)/1000);
+    previous=now;
+    if(autoSpin && !reducedMotion && pointers.size===0){
+      yaw += dt*.18;
+      updateCamera();
+    } else if(!reducedMotion && pointers.size===0 && now-lastInteraction>6500){
+      yaw += dt*.018;
+      updateCamera();
+    }
+    dust.rotation.y += dt*.012;
+    updateMeepleAnimations(now);
+    renderer.render(scene,camera);
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('meeple3d:update',e=>syncPlayers(e.detail?.players||[]));
+  syncPlayers(window.__meeple3dPlayers||[]);
+  status.classList.add('ready');
+  requestAnimationFrame(frame);
+})();
+</script>
+
 </body>
 </html>
