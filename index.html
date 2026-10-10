@@ -1,0 +1,1480 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#3b2a1c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Meeple Score" />
+  <meta name="description" content="Premium medieval tabletop score tracker for iPad." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <title>Meeple Score V2 — Medieval Edition</title>
+  <style>
+    :root {
+      --paper:#f5ecd3;
+      --ink:#2a251f;
+      --muted:#756b5c;
+      --line:rgba(57,45,31,.16);
+      --card:rgba(255,255,255,.80);
+      --green:#2f553f;
+      --shadow:0 10px 28px rgba(69,50,22,.12);
+    }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { margin:0; min-height:100%; background:var(--paper); color:var(--ink); font-family:ui-rounded,"SF Pro Rounded","SF Pro Display",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    body {
+      min-height:100vh;
+      padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+      background:
+        radial-gradient(circle at 12% 0%,rgba(255,255,255,.72),transparent 28%),
+        linear-gradient(135deg,#f7f0dc 0%,#efe1bd 52%,#e8d2a3 100%);
+    }
+    button,input,select { font:inherit; }
+    button { touch-action:manipulation; cursor:pointer; }
+    .app { width:min(1180px,100%); margin:0 auto; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .brand { display:flex; align-items:center; gap:10px; min-width:0; }
+    .logo { width:44px; height:44px; border-radius:14px; background:var(--green); color:#fff; display:grid; place-items:center; font-size:23px; box-shadow:var(--shadow); }
+    .brand h1 { margin:0; font-size:clamp(22px,3vw,32px); line-height:1; letter-spacing:-.025em; }
+    .brand p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+    .top-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
+    .btn { border:1px solid var(--line); background:rgba(255,255,255,.76); color:var(--ink); min-height:42px; border-radius:13px; padding:0 12px; font-weight:800; box-shadow:0 3px 10px rgba(50,35,16,.05); }
+    .btn:active { transform:translateY(1px) scale(.99); }
+    .btn.primary { background:var(--green); color:#fff; border-color:var(--green); }
+    .btn.danger { color:#8d2d2d; }
+
+    .score-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+    .player-card {
+      --player:#3568b8;
+      position:relative;
+      overflow:hidden;
+      min-height:142px;
+      border:1px solid var(--line);
+      background:var(--card);
+      border-radius:20px;
+      padding:14px 15px 13px 19px;
+      box-shadow:var(--shadow);
+    }
+    .player-card::before { content:""; position:absolute; inset:0 auto 0 0; width:8px; background:var(--player); }
+    .player-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .player-id { display:flex; align-items:center; gap:9px; min-width:0; }
+    .player-dot { width:16px; height:16px; flex:0 0 auto; border-radius:6px; background:var(--player); box-shadow:inset 0 0 0 2px rgba(0,0,0,.08); }
+    .player-name { border:0; background:transparent; width:100%; min-width:0; padding:2px 0; outline:none; font-size:18px; font-weight:900; color:var(--ink); border-bottom:2px solid transparent; }
+    .player-name:focus { border-bottom-color:var(--player); }
+    .rank { color:var(--muted); font-size:12px; font-weight:800; white-space:nowrap; }
+    .player-body { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:end; gap:15px; margin-top:8px; }
+    .score { margin:0; min-width:82px; font-size:clamp(54px,7vw,74px); font-weight:950; line-height:.9; letter-spacing:-.055em; font-variant-numeric:tabular-nums; }
+    .mini-history { min-width:0; align-self:stretch; display:flex; flex-direction:column; justify-content:flex-end; }
+    .mini-history-title { color:var(--muted); font-size:9px; font-weight:900; margin-bottom:3px; text-transform:uppercase; letter-spacing:.03em; }
+    .mini-history-scroll {
+      max-height:44px;
+      overflow-y:auto;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:thin;
+      padding-right:2px;
+    }
+    .mini-history-row {
+      height:22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:7px;
+      border-top:1px solid rgba(57,45,31,.08);
+      color:#5e5549;
+      font-size:10px;
+      white-space:nowrap;
+    }
+    .mini-history-row:first-child { border-top:0; }
+    .mini-history-label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .mini-history-points { flex:0 0 auto; color:var(--ink); font-weight:950; }
+    .mini-history-empty { height:22px; display:flex; align-items:center; color:#a09789; font-size:10px; }
+    .dashboard-action { display:flex; justify-content:center; margin:13px 0 10px; }
+    .add-score-main { min-height:58px; padding:0 28px; border:0; border-radius:18px; background:var(--green); color:#fff; font-weight:950; font-size:18px; box-shadow:0 8px 20px rgba(47,85,63,.20); }
+    .add-score-main:active { transform:scale(.985); }
+    .footer-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; background:rgba(255,255,255,.52); border:1px solid var(--line); border-radius:15px; padding:8px 11px; color:var(--muted); font-size:11px; }
+    .save-state { display:flex; align-items:center; gap:7px; }
+    .save-dot { width:8px; height:8px; border-radius:50%; background:#4c8a64; }
+
+    .track-section {
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:11px 13px 13px;
+      background:rgba(255,255,255,.48);
+      box-shadow:0 8px 24px rgba(69,50,22,.08);
+      overflow:hidden;
+    }
+    .track-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:4px; }
+    .track-header h2 { margin:0; font-size:17px; letter-spacing:-.01em; }
+    .track-header p { margin:2px 0 0; color:var(--muted); font-size:11px; }
+    .track-legend { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; max-width:62%; }
+    .track-chip {
+      --player:#3568b8;
+      display:flex; align-items:center; gap:5px;
+      min-height:27px; padding:0 8px;
+      border:1px solid var(--line); border-radius:999px;
+      background:rgba(255,255,255,.75);
+      font-size:10px; font-weight:850; color:var(--ink);
+      white-space:nowrap;
+    }
+    .track-chip-dot { width:9px; height:9px; border-radius:4px; background:var(--player); }
+    .track-chip-lap { color:var(--muted); font-weight:800; }
+    .track-stage { perspective:1100px; padding:3px 8px 10px; }
+    .track-board {
+      transform:rotateX(8deg) rotateZ(-.45deg);
+      transform-origin:center center;
+      filter:drop-shadow(0 13px 10px rgba(55,43,25,.20));
+      transition:transform .2s ease;
+    }
+    .track-board svg { display:block; width:100%; height:auto; overflow:visible; }
+    .track-cell-number { font-size:11px; font-weight:900; fill:#4b4a32; text-anchor:middle; dominant-baseline:middle; pointer-events:none; }
+    .track-marker { transition:transform .28s ease; }
+    .track-marker-name { font-size:9px; font-weight:900; fill:#fff; text-anchor:middle; paint-order:stroke; stroke:rgba(0,0,0,.42); stroke-width:2px; }
+    .track-lap-badge { font-size:8px; font-weight:950; fill:#fff; text-anchor:middle; dominant-baseline:middle; }
+
+    .overlay { position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(41,34,26,.43); backdrop-filter:blur(8px); }
+    .overlay.show { display:flex; }
+    .modal { width:min(760px,100%); max-height:92vh; overflow:auto; border:1px solid rgba(255,255,255,.7); border-radius:26px; background:#faf5e8; padding:20px; box-shadow:0 24px 70px rgba(24,18,10,.28); }
+    .modal.wide { width:min(1080px,96vw); }
+    .modal h2 { margin:0 0 5px; font-size:27px; }
+    .hint { margin:0 0 15px; color:var(--muted); font-size:13px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:17px; }
+
+    .setup-count { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:15px; }
+    .count-btn { min-height:50px; border-radius:13px; border:1px solid var(--line); background:#fff; font-weight:900; }
+    .count-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+    .setup-list { display:grid; gap:9px; }
+    .setup-player { display:grid; grid-template-columns:48px 1fr 150px; gap:8px; align-items:center; }
+    .setup-number { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; font-weight:950; background:#eadfca; }
+    .field { min-height:44px; border-radius:11px; border:1px solid var(--line); background:#fff; padding:0 10px; outline:none; width:100%; }
+
+    .score-step { margin-top:14px; }
+    .step-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; font-weight:950; }
+    .step-title small { color:var(--muted); font-weight:700; }
+    .recipient-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .recipient-btn {
+      --player:#3568b8;
+      position:relative;
+      min-height:58px;
+      border:2px solid transparent;
+      border-radius:15px;
+      background:#fff;
+      color:var(--ink);
+      display:flex;
+      align-items:center;
+      gap:9px;
+      padding:8px 10px;
+      text-align:left;
+      font-weight:900;
+      box-shadow:0 3px 9px rgba(60,40,20,.05);
+    }
+    .recipient-btn .dot { width:15px; height:15px; border-radius:5px; background:var(--player); flex:0 0 auto; }
+    .recipient-btn .check { margin-left:auto; width:23px; height:23px; border:1px solid var(--line); border-radius:8px; display:grid; place-items:center; color:transparent; background:#f8f4e9; font-size:14px; }
+    .recipient-btn.selected { border-color:var(--player); background:color-mix(in srgb,var(--player) 9%,white); }
+    .recipient-btn.selected .check { background:var(--player); border-color:var(--player); color:#fff; }
+
+    .category-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+    .category-btn { min-height:45px; border:1px solid var(--line); border-radius:12px; background:#fff; font-size:12px; font-weight:900; padding:4px; }
+    .category-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+    .goods-grid { display:none; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:7px; }
+    .goods-grid.show { display:grid; }
+    .goods-btn { min-height:42px; border:1px solid var(--line); border-radius:12px; background:#fff; font-weight:900; }
+    .goods-btn.active { background:#765b32; color:#fff; border-color:#765b32; }
+
+    .points-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+    .point-btn { min-height:48px; border:1px solid rgba(0,0,0,.10); border-radius:13px; background:#fff; font-weight:950; font-size:16px; box-shadow:0 3px 8px rgba(60,40,20,.05); }
+    .point-btn:active { transform:scale(.97); }
+    .pending-row { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:8px; }
+    .pending-input { min-height:48px; border:1px solid var(--line); border-radius:13px; background:#fff; padding:0 12px; font-size:17px; font-weight:900; outline:none; }
+    .clear-pending { min-width:76px; border:1px solid var(--line); border-radius:13px; background:#fff; color:var(--muted); font-weight:850; }
+    .preview {
+      margin-top:13px;
+      padding:11px 12px;
+      border-radius:14px;
+      background:#efe6cf;
+      color:#5f5548;
+      font-size:13px;
+      line-height:1.5;
+    }
+    .preview strong { color:var(--ink); }
+
+    .history-list { display:grid; gap:8px; margin-top:10px; }
+    .history-item { border:1px solid var(--line); border-radius:14px; background:#fff; padding:10px 11px; }
+    .history-head { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .history-title { font-weight:950; }
+    .history-time { color:var(--muted); font-size:11px; white-space:nowrap; }
+    .history-players { margin-top:5px; color:var(--muted); font-size:12px; }
+    .mini-dot { display:inline-block; width:10px; height:10px; border-radius:4px; margin-right:4px; vertical-align:-1px; }
+    .empty { text-align:center; color:var(--muted); padding:28px 10px; }
+
+    .summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:10px; }
+    .summary-card { border:1px solid var(--line); border-radius:15px; background:#fff; padding:11px 12px; }
+    .summary-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
+    .summary-player { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:950; }
+    .summary-total { font-size:22px; font-weight:950; }
+    .summary-rows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 12px; }
+    .summary-row { display:flex; align-items:center; justify-content:space-between; gap:7px; color:var(--muted); font-size:12px; }
+    .summary-row strong { color:var(--ink); }
+
+    .toast { position:fixed; z-index:50; left:50%; bottom:max(22px,env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(14px); opacity:0; pointer-events:none; transition:.18s ease; border-radius:999px; background:#2d2924; color:#fff; padding:10px 14px; font-weight:800; box-shadow:0 12px 28px rgba(0,0,0,.2); }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    @media (orientation:landscape) and (min-width:900px) {
+      .app {
+        display:grid;
+        grid-template-columns:1fr;
+        grid-template-areas:
+          "header"
+          "players"
+          "action"
+          "track"
+          "footer";
+        row-gap:8px;
+        align-items:start;
+      }
+      header { grid-area:header; margin-bottom:0; }
+      .score-grid { grid-area:players; gap:9px; }
+      .score-grid.players-3,.score-grid.players-5,.score-grid.players-6 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .score-grid.players-2,.score-grid.players-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+      .player-card { min-height:132px; padding:10px 12px 10px 17px; }
+      .player-top { gap:7px; }
+      .player-name { font-size:17px; }
+      .rank { font-size:10px; }
+      .player-body { gap:12px; margin-top:5px; }
+      .score { min-width:72px; font-size:54px; }
+      .mini-history-scroll { max-height:44px; }
+      .mini-history-row { font-size:9.5px; }
+
+      .dashboard-action { grid-area:action; margin:1px 0 0; }
+      .add-score-main { min-height:48px; padding:0 30px; font-size:17px; }
+
+      .track-section {
+        grid-area:track;
+        margin-top:0;
+        padding:8px 12px 9px;
+      }
+      .track-header { margin-bottom:1px; align-items:center; }
+      .track-header h2 { font-size:15px; }
+      .track-header p { display:none; }
+      .track-legend { max-width:72%; gap:4px; }
+      .track-chip { min-height:23px; padding:0 7px; font-size:9px; }
+      .track-stage { padding:0 54px 3px; }
+      .track-board {
+        width:100%;
+        transform:rotateX(5deg) rotateZ(-.2deg);
+        filter:drop-shadow(0 8px 7px rgba(55,43,25,.18));
+      }
+      .track-board svg {
+        width:100%;
+        height:auto;
+        max-height:292px;
+      }
+
+      .footer-bar { grid-area:footer; }
+      .summary-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+    @media (max-width:720px) {
+      .brand p { display:none; }
+      .top-actions .btn { padding:0 9px; }
+      .recipient-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .category-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .setup-player { grid-template-columns:42px 1fr; }
+      .setup-player select { grid-column:2; }
+      .track-header { align-items:flex-start; }
+      .track-legend { max-width:56%; }
+      .track-board { transform:rotateX(5deg); }
+      .track-stage { padding-left:0; padding-right:0; }
+    }
+    @media (max-width:560px) {
+      .score-grid { grid-template-columns:1fr; }
+      .summary-grid { grid-template-columns:1fr; }
+    }
+  </style>
+
+  <style id="premium-medieval-v2">
+    :root {
+      --paper:#e8d3a6;
+      --ink:#2b1d13;
+      --muted:#746048;
+      --line:rgba(76,49,24,.28);
+      --card:rgba(255,248,226,.93);
+      --green:#335d3d;
+      --gold:#c79a43;
+      --gold-soft:#ead08d;
+      --wood:#51331f;
+      --wood-dark:#2f1e16;
+      --wine:#7a342c;
+      --shadow:0 14px 34px rgba(49,31,15,.22);
+    }
+
+    html { background:#2b1c13; }
+    body {
+      position:relative;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(255,247,212,.72) 0 2%, transparent 18%),
+        radial-gradient(circle at 78% 18%, rgba(89,121,62,.18), transparent 30%),
+        radial-gradient(circle at 20% 82%, rgba(105,72,38,.16), transparent 32%),
+        repeating-linear-gradient(17deg, rgba(89,60,27,.035) 0 1px, transparent 1px 7px),
+        linear-gradient(135deg,#e8d4a7 0%,#f0dfb7 42%,#d9be83 100%);
+      background-attachment:fixed;
+    }
+    body::before,
+    body::after {
+      content:"";
+      position:fixed;
+      pointer-events:none;
+      z-index:0;
+    }
+    body::before {
+      inset:0;
+      opacity:.32;
+      background:
+        radial-gradient(ellipse at 50% 105%, rgba(55,84,43,.50) 0 18%, transparent 18.5%),
+        radial-gradient(ellipse at 7% 104%, rgba(62,93,48,.42) 0 13%, transparent 13.5%),
+        radial-gradient(ellipse at 93% 104%, rgba(62,93,48,.36) 0 14%, transparent 14.5%);
+      mix-blend-mode:multiply;
+    }
+    body::after {
+      left:0; right:0; bottom:0; height:13vh;
+      opacity:.18;
+      background:
+        linear-gradient(90deg,
+          transparent 0 5%,
+          #3a281b 5% 6.2%, transparent 6.2% 9%,
+          #3a281b 9% 10%, transparent 10% 83%,
+          #3a281b 83% 84.2%, transparent 84.2% 88%,
+          #3a281b 88% 89.2%, transparent 89%);
+      clip-path:polygon(0 72%,4% 72%,4% 54%,6% 54%,6% 34%,8% 34%,8% 59%,11% 59%,11% 74%,19% 74%,19% 62%,23% 62%,23% 78%,73% 78%,73% 63%,77% 63%,77% 76%,85% 76%,85% 49%,87% 49%,87% 27%,89% 27%,89% 56%,92% 56%,92% 72%,100% 72%,100% 100%,0 100%);
+      background-color:#3b291c;
+    }
+
+    .app { position:relative; z-index:1; }
+
+    header {
+      position:relative;
+      padding:10px 12px;
+      border:1px solid rgba(92,58,28,.45);
+      border-radius:18px;
+      background:
+        linear-gradient(90deg,rgba(62,39,24,.97),rgba(91,57,31,.95) 48%,rgba(54,35,23,.97));
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.14),
+        inset 0 -3px rgba(24,14,8,.28),
+        0 8px 22px rgba(45,28,15,.20);
+    }
+    header::before,
+    header::after {
+      content:"✦";
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      color:var(--gold-soft);
+      opacity:.8;
+      font-size:15px;
+    }
+    header::before { left:5px; }
+    header::after { right:5px; }
+
+    .brand { padding-left:9px; }
+    .logo {
+      position:relative;
+      width:50px;
+      height:50px;
+      border:2px solid #e2bd67;
+      border-radius:50% 50% 44% 44%;
+      background:
+        radial-gradient(circle at 35% 28%,#62865b,#35563b 65%,#20372a);
+      color:#ffe7a5;
+      box-shadow:
+        inset 0 0 0 4px rgba(41,24,14,.28),
+        0 4px 10px rgba(0,0,0,.28);
+      text-shadow:0 2px 2px rgba(0,0,0,.4);
+    }
+    .brand h1 {
+      color:#fff3ca;
+      font-family:Georgia,"Times New Roman",serif;
+      letter-spacing:.015em;
+      text-shadow:0 2px 1px rgba(0,0,0,.52);
+    }
+    .brand p { color:#dec99b; }
+
+    .top-actions .btn,
+    .btn {
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(99,65,30,.46);
+      background:
+        linear-gradient(#fff7dc,#ead6a7);
+      color:#3f2b1b;
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.85),
+        0 3px 7px rgba(39,24,12,.18);
+    }
+    .btn::after {
+      content:"";
+      position:absolute; inset:2px;
+      border:1px solid rgba(132,91,38,.14);
+      border-radius:10px;
+      pointer-events:none;
+    }
+    .btn.primary,
+    .add-score-main {
+      border:1px solid #e0b85e;
+      background:
+        linear-gradient(180deg,#476f49 0%,#31543a 54%,#26432f 100%);
+      color:#fff7d6;
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.20),
+        inset 0 -3px rgba(17,31,21,.30),
+        0 7px 16px rgba(37,53,30,.26);
+      text-shadow:0 1px 1px rgba(0,0,0,.34);
+    }
+    .btn.danger {
+      color:#722d24;
+      background:linear-gradient(#fff3d9,#e8c9a4);
+    }
+
+    .player-card {
+      isolation:isolate;
+      border:1px solid rgba(87,54,24,.38);
+      background:
+        radial-gradient(circle at 85% 18%,rgba(255,255,255,.8),transparent 25%),
+        repeating-linear-gradient(0deg,rgba(91,61,29,.025) 0 1px,transparent 1px 5px),
+        linear-gradient(145deg,#fff9e8,#f2e2bb);
+      box-shadow:
+        inset 0 0 0 3px rgba(255,255,255,.34),
+        inset 0 -8px 18px rgba(116,80,37,.07),
+        0 9px 19px rgba(60,38,19,.18);
+    }
+    .player-card::before {
+      width:10px;
+      box-shadow:2px 0 0 rgba(255,255,255,.45),4px 0 9px rgba(40,24,11,.10);
+    }
+    .player-card::after {
+      content:"";
+      position:absolute;
+      z-index:-1;
+      inset:6px;
+      border:1px solid rgba(152,105,48,.22);
+      border-radius:14px;
+      pointer-events:none;
+    }
+    .player-dot {
+      border:1px solid rgba(255,255,255,.7);
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.16),
+        0 2px 4px rgba(0,0,0,.18);
+    }
+    .player-name {
+      font-family:Georgia,"Times New Roman",serif;
+      color:#3a2719;
+    }
+    .rank {
+      padding:4px 7px;
+      border:1px solid rgba(126,87,38,.21);
+      border-radius:999px;
+      background:rgba(226,198,132,.28);
+      color:#755c38;
+    }
+    .score {
+      color:#2c2018;
+      text-shadow:
+        0 1px #fff8e7,
+        0 3px 0 rgba(112,79,42,.10);
+    }
+    .mini-history {
+      padding:5px 7px;
+      border-radius:10px;
+      background:rgba(173,137,77,.08);
+      border:1px solid rgba(124,84,38,.10);
+    }
+    .mini-history-title { color:#8a6a3c; }
+    .mini-history-row { border-color:rgba(112,78,39,.12); }
+
+    .track-section {
+      position:relative;
+      border:1px solid #76502b;
+      background:
+        linear-gradient(#694524,#402817);
+      box-shadow:
+        inset 0 0 0 3px rgba(214,169,82,.30),
+        inset 0 0 0 5px rgba(43,25,14,.32),
+        0 12px 25px rgba(50,31,15,.23);
+    }
+    .track-section::before {
+      content:"";
+      position:absolute;
+      inset:6px;
+      pointer-events:none;
+      border:1px solid rgba(239,204,119,.35);
+      border-radius:13px;
+    }
+    .track-header { position:relative; z-index:1; }
+    .track-header h2 {
+      color:#ffe8a9;
+      font-family:Georgia,"Times New Roman",serif;
+      text-shadow:0 2px rgba(0,0,0,.35);
+    }
+    .track-header p { color:#cfb98d; }
+    .track-chip {
+      border-color:rgba(222,185,105,.40);
+      background:rgba(255,245,213,.91);
+      color:#49311e;
+      box-shadow:0 2px 5px rgba(0,0,0,.15);
+    }
+    .track-board {
+      filter:
+        drop-shadow(0 13px 8px rgba(20,13,7,.34))
+        sepia(.08) saturate(1.08);
+    }
+
+    .footer-bar {
+      border-color:rgba(105,68,31,.30);
+      background:
+        linear-gradient(90deg,rgba(255,246,216,.82),rgba(232,207,151,.72));
+      color:#705737;
+      box-shadow:inset 0 1px rgba(255,255,255,.5);
+    }
+    .save-dot {
+      background:#6e8d4e;
+      box-shadow:0 0 0 3px rgba(106,139,74,.12);
+    }
+
+    .overlay {
+      background:
+        radial-gradient(circle at 50% 28%,rgba(99,72,43,.18),transparent 36%),
+        rgba(32,22,15,.68);
+      backdrop-filter:blur(9px) sepia(.12);
+    }
+    .modal {
+      position:relative;
+      border:2px solid #8e6634;
+      background:
+        radial-gradient(circle at 18% 12%,rgba(255,255,255,.72),transparent 28%),
+        repeating-linear-gradient(0deg,rgba(90,60,28,.025) 0 1px,transparent 1px 6px),
+        linear-gradient(145deg,#fff5d8,#ead3a2);
+      box-shadow:
+        inset 0 0 0 5px rgba(124,83,36,.08),
+        0 28px 80px rgba(21,13,7,.46);
+    }
+    .modal::before {
+      content:"✦  ❦  ✦";
+      position:absolute;
+      top:7px;
+      left:50%;
+      transform:translateX(-50%);
+      color:#a77a37;
+      opacity:.62;
+      font-family:Georgia,serif;
+      letter-spacing:.35em;
+      pointer-events:none;
+    }
+    .modal h2 {
+      margin-top:9px;
+      color:#4e331d;
+      font-family:Georgia,"Times New Roman",serif;
+      letter-spacing:.01em;
+    }
+    .hint { color:#7b6548; }
+
+    .recipient-btn,
+    .category-btn,
+    .goods-btn,
+    .point-btn,
+    .count-btn,
+    .field,
+    .pending-input,
+    .clear-pending,
+    .history-item,
+    .summary-card {
+      border-color:rgba(112,75,34,.28);
+      background:
+        linear-gradient(#fffaf0,#f1dfb7);
+      color:#422c1a;
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.82),
+        0 3px 7px rgba(63,40,19,.09);
+    }
+    .recipient-btn.selected {
+      background:
+        linear-gradient(#fff8de,#ead2a1);
+      box-shadow:
+        inset 0 0 0 2px var(--player),
+        0 4px 10px rgba(63,40,19,.13);
+    }
+    .category-btn.active {
+      border-color:#c49a50;
+      background:linear-gradient(#4e754f,#31573b);
+      color:#fff2c8;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.15),
+        0 4px 9px rgba(36,62,40,.20);
+    }
+    .goods-btn.active {
+      border-color:#c49a50;
+      background:linear-gradient(#916d37,#63441f);
+      color:#fff1c9;
+    }
+    .point-btn {
+      font-family:Georgia,"Times New Roman",serif;
+      color:#3f2a19;
+    }
+    .point-btn:active {
+      background:linear-gradient(#ead09a,#cda95f);
+    }
+    .preview {
+      border:1px solid rgba(119,78,34,.20);
+      background:
+        linear-gradient(90deg,rgba(205,171,101,.20),rgba(242,222,176,.40));
+      color:#6b563b;
+    }
+
+    .history-item,
+    .summary-card {
+      background:
+        radial-gradient(circle at 90% 10%,rgba(255,255,255,.65),transparent 20%),
+        linear-gradient(#fff9e8,#efe0bc);
+    }
+    .history-title,
+    .summary-player,
+    .summary-total { color:#3d2919; }
+
+    .setup-number {
+      border:1px solid rgba(111,76,38,.24);
+      background:linear-gradient(#e8ce93,#cda969);
+      color:#56391d;
+      box-shadow:inset 0 1px rgba(255,255,255,.5);
+    }
+
+    ::-webkit-scrollbar { width:7px; height:7px; }
+    ::-webkit-scrollbar-track { background:rgba(91,62,31,.08); border-radius:999px; }
+    ::-webkit-scrollbar-thumb { background:#a07a45; border-radius:999px; }
+
+    @keyframes medievalReveal {
+      from { opacity:0; transform:translateY(6px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+    .player-card,
+    .track-section,
+    .dashboard-action { animation:medievalReveal .38s ease both; }
+    .player-card:nth-child(2) { animation-delay:.04s; }
+    .player-card:nth-child(3) { animation-delay:.08s; }
+    .player-card:nth-child(4) { animation-delay:.12s; }
+    .player-card:nth-child(5) { animation-delay:.16s; }
+    .player-card:nth-child(6) { animation-delay:.20s; }
+
+    @media (orientation:landscape) and (min-width:900px) {
+      body { padding-top:max(9px,env(safe-area-inset-top)); }
+      header { padding-top:7px; padding-bottom:7px; }
+      .player-card { box-shadow:
+        inset 0 0 0 3px rgba(255,255,255,.30),
+        0 7px 15px rgba(54,34,17,.16); }
+    }
+  </style>
+
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">♜</div>
+        <div>
+          <h1>Meeple Score</h1>
+          <p>Premium Medieval Edition • เลือกผู้เล่น → ประเภท → คะแนน → ยืนยัน</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="undoBtn" type="button">↶ Undo</button>
+        <button class="btn" id="historyBtn" type="button">ประวัติ</button>
+        <button class="btn" id="summaryBtn" type="button">สรุปคะแนน</button>
+        <button class="btn danger" id="newGameBtn" type="button">เกมใหม่</button>
+      </div>
+    </header>
+
+    <section class="score-grid" id="scoreGrid" aria-live="polite"></section>
+
+    <section class="track-section" aria-labelledby="trackTitle">
+      <div class="track-header">
+        <div>
+          <h2 id="trackTitle">🏰 Live Score Track</h2>
+          <p>กระดานคะแนนแบบ 3D • ตัวหมากขยับตามคะแนนจริง</p>
+        </div>
+        <div class="track-legend" id="trackLegend"></div>
+      </div>
+      <div class="track-stage">
+        <div class="track-board">
+          <svg id="scoreTrackSvg" viewBox="0 0 1000 350" role="img" aria-label="กระดานตำแหน่งคะแนนของผู้เล่น"></svg>
+        </div>
+      </div>
+    </section>
+
+    <div class="dashboard-action">
+      <button class="add-score-main" id="openScoreBtn" type="button">＋ เพิ่มคะแนน</button>
+    </div>
+
+    <div class="footer-bar">
+      <div class="save-state"><span class="save-dot"></span><span id="saveLabel">บันทึกอัตโนมัติแล้ว</span></div>
+      <div id="gameInfo">พร้อมเล่น</div>
+    </div>
+  </main>
+
+  <div class="overlay" id="setupOverlay" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <div class="modal">
+      <h2 id="setupTitle">ตั้งค่าเกม</h2>
+      <p class="hint">เลือกจำนวนผู้เล่น ตั้งชื่อ และเลือกสีให้ตรงกับ Meeple ที่ใช้จริง</p>
+      <div class="setup-count" id="countChooser"></div>
+      <div class="setup-list" id="setupList"></div>
+      <div class="modal-actions">
+        <button class="btn primary" id="startBtn" type="button">เริ่มเกม</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="scoreOverlay" role="dialog" aria-modal="true" aria-labelledby="scoreTitle">
+    <div class="modal wide">
+      <h2 id="scoreTitle">เพิ่มคะแนน</h2>
+      <p class="hint">หนึ่งรายการสามารถให้คะแนนผู้เล่นหลายคนพร้อมกันได้</p>
+
+      <section class="score-step">
+        <div class="step-title"><span>1. ใครได้คะแนน?</span><small id="selectedCount">ยังไม่ได้เลือกผู้เล่น</small></div>
+        <div class="recipient-grid" id="recipientGrid"></div>
+      </section>
+
+      <section class="score-step">
+        <div class="step-title"><span>2. ประเภทคะแนน</span></div>
+        <div class="category-grid" id="categoryGrid"></div>
+        <div class="goods-grid" id="goodsGrid"></div>
+      </section>
+
+      <section class="score-step">
+        <div class="step-title"><span>3. คะแนน</span><small>กดซ้ำเพื่อสะสมได้</small></div>
+        <div class="points-grid" id="pointsGrid"></div>
+        <div class="pending-row">
+          <input class="pending-input" id="pendingInput" inputmode="numeric" pattern="-?[0-9]*" placeholder="คะแนนที่กำลังจะเพิ่ม เช่น 12" aria-label="คะแนนที่จะเพิ่ม" />
+          <button class="clear-pending" id="clearPendingBtn" type="button">ล้าง</button>
+        </div>
+      </section>
+
+      <div class="preview" id="scorePreview">เลือกผู้เล่น ประเภท และคะแนนก่อน</div>
+
+      <div class="modal-actions">
+        <button class="btn" id="closeScoreBtn" type="button">ยกเลิก</button>
+        <button class="btn primary" id="confirmScoreBtn" type="button">เพิ่มคะแนน</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="historyOverlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal">
+      <h2 id="historyTitle">ประวัติคะแนน</h2>
+      <p class="hint">รายการล่าสุดอยู่ด้านบน</p>
+      <div class="history-list" id="historyList"></div>
+      <div class="modal-actions">
+        <button class="btn" id="closeHistoryBtn" type="button">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="summaryOverlay" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
+    <div class="modal wide">
+      <h2 id="summaryTitle">สรุปคะแนนตามประเภท</h2>
+      <p class="hint">คะแนนรวมและรายละเอียดของผู้เล่นแต่ละคน</p>
+      <div class="summary-grid" id="summaryGrid"></div>
+      <div class="modal-actions">
+        <button class="btn" id="closeSummaryBtn" type="button">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'meeple-score-v1';
+
+  var palette = [
+    { name:'แดง', value:'#c73b3b' },
+    { name:'น้ำเงิน', value:'#3568b8' },
+    { name:'เขียว', value:'#3e8055' },
+    { name:'เหลือง', value:'#c69c22' },
+    { name:'ดำ', value:'#383838' },
+    { name:'ชมพู', value:'#b85f86' },
+    { name:'ม่วง', value:'#7255a3' },
+    { name:'ส้ม', value:'#c66b2d' }
+  ];
+
+  var baseCategories = [
+    { id:'city', label:'🏰 เมือง' },
+    { id:'road', label:'🛣️ ถนน' },
+    { id:'monastery', label:'⛪ โบสถ์ / 🌼 ดอกไม้' },
+    { id:'field', label:'🌾 นอนหญ้า' }
+  ];
+
+  var goodsTypes = [
+    { id:'goods_chicken', label:'🐔 ไก่' },
+    { id:'goods_cloth', label:'🧵 ผ้า' },
+    { id:'goods_rice', label:'🌾 ข้าว' }
+  ];
+
+  var scoringCategories = baseCategories.concat(goodsTypes);
+
+  function uid() {
+    return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+  }
+
+  function defaultState() {
+    return {
+      started:false,
+      playerCount:4,
+      players:Array.from({length:4},function(_,i){
+        return { id:uid(), name:'ผู้เล่น '+(i+1), color:palette[i].value, score:0 };
+      }),
+      history:[],
+      createdAt:Date.now()
+    };
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  var state = loadState() || defaultState();
+  state.players = (state.players || []).map(function(p){
+    return {
+      id:p.id || uid(),
+      name:p.name || 'ผู้เล่น',
+      color:p.color || '#3568b8',
+      score:Number(p.score) || 0
+    };
+  });
+  state.history = Array.isArray(state.history) ? state.history : [];
+  var setupCount = state.playerCount || state.players.length || 4;
+
+  var draft = {
+    playerIds:[],
+    category:'city',
+    points:''
+  };
+
+  function el(id) { return document.getElementById(id); }
+  var scoreGrid = el('scoreGrid');
+  var setupOverlay = el('setupOverlay');
+  var scoreOverlay = el('scoreOverlay');
+  var historyOverlay = el('historyOverlay');
+  var summaryOverlay = el('summaryOverlay');
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    el('saveLabel').textContent = 'บันทึกอัตโนมัติแล้ว';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>'"]/g,function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];
+    });
+  }
+
+  function signed(n) { return n > 0 ? '+'+n : String(n); }
+
+  function showToast(text) {
+    var t = el('toast');
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(function(){ t.classList.remove('show'); },1600);
+  }
+
+  function categoryLabel(id) {
+    var found = scoringCategories.find(function(c){ return c.id === id; });
+    if (found) return found.label;
+    if (id === 'goods_legacy' || id === 'goods' || id === 'expansion') return '🎁 สินค้า (เดิม)';
+    return '🕘 ไม่ระบุ (ข้อมูลเก่า)';
+  }
+
+  function playerRecentHistory(playerId) {
+    return state.history.slice().reverse().filter(function(h){
+      if (Array.isArray(h.players)) {
+        return h.players.some(function(x){ return x.id === playerId; });
+      }
+      return h.playerId === playerId;
+    });
+  }
+
+  function renderMiniHistory(playerId) {
+    var entries = playerRecentHistory(playerId);
+    if (!entries.length) {
+      return '<div class="mini-history"><div class="mini-history-title">ล่าสุด</div><div class="mini-history-empty">ยังไม่มีคะแนน</div></div>';
+    }
+    var rows = entries.map(function(h){
+      return '<div class="mini-history-row">' +
+        '<span class="mini-history-label">'+categoryLabel(h.category)+'</span>' +
+        '<span class="mini-history-points">'+signed(Number(h.delta)||0)+'</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="mini-history">' +
+      '<div class="mini-history-title">ล่าสุด • เลื่อนดูได้</div>' +
+      '<div class="mini-history-scroll">'+rows+'</div>' +
+    '</div>';
+  }
+
+  function renderDashboard() {
+    scoreGrid.className = 'score-grid players-' + state.players.length;
+    scoreGrid.innerHTML = '';
+
+    var ranked = state.players.slice().sort(function(a,b){ return b.score-a.score; });
+    var rankMap = {};
+    ranked.forEach(function(p,i){ rankMap[p.id] = i+1; });
+
+    state.players.forEach(function(p){
+      var card = document.createElement('article');
+      card.className = 'player-card';
+      card.style.setProperty('--player',p.color);
+      card.innerHTML =
+        '<div class="player-top">' +
+          '<div class="player-id">' +
+            '<span class="player-dot" aria-hidden="true"></span>' +
+            '<input class="player-name" data-name-id="'+p.id+'" value="'+escapeHtml(p.name)+'" maxlength="24" aria-label="ชื่อผู้เล่น" />' +
+          '</div>' +
+          '<span class="rank">อันดับ '+rankMap[p.id]+'</span>' +
+        '</div>' +
+        '<div class="player-body">' +
+          '<div class="score">'+p.score+'</div>' +
+          renderMiniHistory(p.id) +
+        '</div>';
+      scoreGrid.appendChild(card);
+    });
+
+    renderScoreTrack();
+
+    var start = new Date(state.createdAt || Date.now());
+    el('gameInfo').textContent = state.players.length+' ผู้เล่น • เริ่ม '+start.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  function scoreCellPosition(score) {
+    var safe = Math.max(0, Number(score) || 0);
+    var pos = safe % 50;
+    var row = Math.floor(pos / 10);
+    var local = pos % 10;
+    var col = row % 2 === 0 ? local : 9 - local;
+    return {
+      x:78 + col * 94,
+      y:70 + row * 50,
+      lap:Math.floor(safe / 50),
+      pos:pos
+    };
+  }
+
+  function svgEscape(s) {
+    return escapeHtml(s).replace(/\n/g,' ');
+  }
+
+  function renderScoreTrack() {
+    var svg = el('scoreTrackSvg');
+    var legend = el('trackLegend');
+    if (!svg || !legend) return;
+
+    legend.innerHTML = state.players.map(function(p){
+      var safe = Math.max(0,Number(p.score)||0);
+      var lap = Math.floor(safe/50);
+      return '<span class="track-chip" style="--player:'+p.color+'">' +
+        '<span class="track-chip-dot"></span>' +
+        '<span>'+escapeHtml(p.name)+' '+p.score+'</span>' +
+        (lap > 0 ? '<span class="track-chip-lap">+'+(lap*50)+'</span>' : '') +
+      '</span>';
+    }).join('');
+
+    var defs =
+      '<defs>' +
+        '<linearGradient id="grass" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0%" stop-color="#91b665"/><stop offset="58%" stop-color="#769d55"/><stop offset="100%" stop-color="#5f8446"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="#a97743"/><stop offset="100%" stop-color="#6f4729"/>' +
+        '</linearGradient>' +
+        '<filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">' +
+          '<feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#2d2419" flood-opacity=".28"/>' +
+        '</filter>' +
+      '</defs>';
+
+    var board =
+      '<rect x="20" y="18" width="960" height="310" rx="30" fill="url(#wood)"/>' +
+      '<rect x="33" y="29" width="934" height="283" rx="23" fill="url(#grass)" stroke="#d8c38d" stroke-width="4"/>' +
+      '<path d="M60 290 C180 220, 210 230, 315 175 S500 90, 645 160 S810 245, 940 90" fill="none" stroke="#d8be7a" stroke-width="18" stroke-linecap="round" opacity=".58"/>' +
+      '<path d="M60 290 C180 220, 210 230, 315 175 S500 90, 645 160 S810 245, 940 90" fill="none" stroke="#a78650" stroke-width="3" stroke-dasharray="7 9" opacity=".5"/>' +
+      '<g opacity=".9">' +
+        '<rect x="455" y="139" width="90" height="55" rx="9" fill="#d9c28b" stroke="#684a32" stroke-width="3"/>' +
+        '<path d="M448 145 L500 105 L552 145 Z" fill="#a65342" stroke="#684a32" stroke-width="3"/>' +
+        '<rect x="492" y="163" width="18" height="31" fill="#684a32"/>' +
+        '<circle cx="500" cy="132" r="8" fill="#f2e5b8"/>' +
+      '</g>';
+
+    var cells = '';
+    for (var i=0;i<50;i++) {
+      var pos = scoreCellPosition(i);
+      var special = i % 10 === 0;
+      cells +=
+        '<g>' +
+          '<rect x="'+(pos.x-38)+'" y="'+(pos.y-19)+'" width="76" height="38" rx="10" ' +
+            'fill="'+(special ? '#f6df9b' : '#f3e8c6')+'" fill-opacity=".95" stroke="'+(special ? '#8c672d' : '#867b5d')+'" stroke-width="'+(special ? '2.6' : '1.5')+'" />' +
+          '<text class="track-cell-number" x="'+pos.x+'" y="'+pos.y+'">'+i+'</text>' +
+        '</g>';
+    }
+
+    var grouped = {};
+    state.players.forEach(function(p){
+      var pos = scoreCellPosition(p.score);
+      var key = String(pos.pos);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push({player:p,meta:pos});
+    });
+
+    var offsets = [
+      [0,0],[-17,-10],[17,-10],[-17,11],[17,11],[0,-18],[0,18]
+    ];
+    var markers = '';
+    Object.keys(grouped).forEach(function(key){
+      grouped[key].forEach(function(entry,index){
+        var p = entry.player;
+        var m = entry.meta;
+        var off = offsets[index] || [((index%3)-1)*16,(Math.floor(index/3)-1)*12];
+        var x = m.x + off[0];
+        var y = m.y + off[1];
+        var shortName = String(p.name || '').trim().slice(0,4);
+        markers +=
+          '<g class="track-marker" transform="translate('+x+' '+y+')" filter="url(#softShadow)">' +
+            '<circle cx="0" cy="-8" r="7" fill="'+p.color+'" stroke="#fff" stroke-width="2"/>' +
+            '<path d="M-9 2 Q0 -3 9 2 L12 14 L-12 14 Z" fill="'+p.color+'" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>' +
+            '<text class="track-marker-name" x="0" y="27">'+svgEscape(shortName)+'</text>' +
+            (m.lap > 0
+              ? '<g transform="translate(15 -17)"><circle r="10" fill="#2d2924" stroke="#fff" stroke-width="1.5"/><text class="track-lap-badge" x="0" y=".5">'+m.lap+'</text></g>'
+              : '') +
+          '</g>';
+      });
+    });
+
+    var labels =
+      '<text x="55" y="48" font-size="12" font-weight="900" fill="#eef4dc">START</text>' +
+      '<text x="945" y="304" font-size="10" text-anchor="end" fill="#e4efd0">50 ช่อง • วนรอบเมื่อเกิน 49</text>';
+
+    svg.innerHTML = defs + board + cells + markers + labels;
+  }
+
+  scoreGrid.addEventListener('change',function(e){
+    if (!e.target.matches('[data-name-id]')) return;
+    var p = state.players.find(function(x){ return x.id === e.target.dataset.nameId; });
+    if (!p) return;
+    p.name = e.target.value.trim() || 'ผู้เล่น';
+    state.history.forEach(function(h){
+      if (h.playerId === p.id) h.name = p.name;
+      if (Array.isArray(h.players)) {
+        h.players.forEach(function(x){ if (x.id === p.id) x.name = p.name; });
+      }
+    });
+    saveState();
+    renderDashboard();
+  });
+
+  function resetDraft() {
+    draft = { playerIds:[], category:'city', points:'' };
+  }
+
+  function openScore() {
+    resetDraft();
+    renderScoreComposer();
+    scoreOverlay.classList.add('show');
+  }
+
+  function closeScore() {
+    scoreOverlay.classList.remove('show');
+    resetDraft();
+  }
+
+  function renderScoreComposer() {
+    var recipients = el('recipientGrid');
+    recipients.innerHTML = '';
+    state.players.forEach(function(p){
+      var selected = draft.playerIds.indexOf(p.id) !== -1;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'recipient-btn' + (selected ? ' selected' : '');
+      b.style.setProperty('--player',p.color);
+      b.dataset.recipient = p.id;
+      b.innerHTML =
+        '<span class="dot"></span>' +
+        '<span>'+escapeHtml(p.name)+'</span>' +
+        '<span class="check">✓</span>';
+      recipients.appendChild(b);
+    });
+
+    el('selectedCount').textContent = draft.playerIds.length
+      ? 'เลือกแล้ว '+draft.playerIds.length+' คน'
+      : 'ยังไม่ได้เลือกผู้เล่น';
+
+    var categoryGrid = el('categoryGrid');
+    categoryGrid.innerHTML = '';
+    baseCategories.forEach(function(c){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'category-btn' + (draft.category === c.id ? ' active' : '');
+      b.dataset.category = c.id;
+      b.textContent = c.label;
+      categoryGrid.appendChild(b);
+    });
+    var goods = document.createElement('button');
+    goods.type = 'button';
+    goods.className = 'category-btn' + (draft.category.indexOf('goods_') === 0 ? ' active' : '');
+    goods.dataset.category = 'goods';
+    goods.textContent = '🎁 สินค้า';
+    categoryGrid.appendChild(goods);
+
+    var goodsGrid = el('goodsGrid');
+    goodsGrid.className = 'goods-grid' + (draft.category.indexOf('goods_') === 0 || draft.category === 'goods' ? ' show' : '');
+    goodsGrid.innerHTML = '';
+    goodsTypes.forEach(function(g){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'goods-btn' + (draft.category === g.id ? ' active' : '');
+      b.dataset.goods = g.id;
+      b.textContent = g.label;
+      goodsGrid.appendChild(b);
+    });
+
+    var pointsGrid = el('pointsGrid');
+    pointsGrid.innerHTML = '';
+    for (var n=1;n<=10;n++) {
+      var pb = document.createElement('button');
+      pb.type = 'button';
+      pb.className = 'point-btn';
+      pb.dataset.point = String(n);
+      pb.textContent = '+'+n;
+      pointsGrid.appendChild(pb);
+    }
+
+    el('pendingInput').value = draft.points;
+    renderPreview();
+  }
+
+  function renderPreview() {
+    var selectedPlayers = state.players.filter(function(p){ return draft.playerIds.indexOf(p.id) !== -1; });
+    var points = Number(draft.points);
+    var categoryReady = draft.category !== 'goods';
+    var box = el('scorePreview');
+
+    if (!selectedPlayers.length || !draft.points || !Number.isFinite(points) || points === 0 || !categoryReady) {
+      var missing = [];
+      if (!selectedPlayers.length) missing.push('ผู้เล่น');
+      if (draft.category === 'goods') missing.push('ชนิดสินค้า');
+      if (!draft.points || !Number.isFinite(points) || points === 0) missing.push('คะแนน');
+      box.innerHTML = 'ยังขาด: <strong>'+escapeHtml(missing.join(', '))+'</strong>';
+      return;
+    }
+
+    box.innerHTML =
+      '<strong>'+categoryLabel(draft.category)+' '+signed(points)+'</strong><br>' +
+      'ให้กับ '+selectedPlayers.map(function(p){ return escapeHtml(p.name); }).join(', ');
+  }
+
+  el('recipientGrid').addEventListener('click',function(e){
+    var b = e.target.closest('[data-recipient]');
+    if (!b) return;
+    var id = b.dataset.recipient;
+    var at = draft.playerIds.indexOf(id);
+    if (at === -1) draft.playerIds.push(id);
+    else draft.playerIds.splice(at,1);
+    renderScoreComposer();
+  });
+
+  el('categoryGrid').addEventListener('click',function(e){
+    var b = e.target.closest('[data-category]');
+    if (!b) return;
+    draft.category = b.dataset.category;
+    renderScoreComposer();
+  });
+
+  el('goodsGrid').addEventListener('click',function(e){
+    var b = e.target.closest('[data-goods]');
+    if (!b) return;
+    draft.category = b.dataset.goods;
+    renderScoreComposer();
+  });
+
+  el('pointsGrid').addEventListener('click',function(e){
+    var b = e.target.closest('[data-point]');
+    if (!b) return;
+    var current = Number(draft.points) || 0;
+    draft.points = String(current + Number(b.dataset.point));
+    el('pendingInput').value = draft.points;
+    renderPreview();
+  });
+
+  el('pendingInput').addEventListener('input',function(e){
+    draft.points = e.target.value;
+    renderPreview();
+  });
+
+  el('clearPendingBtn').addEventListener('click',function(){
+    draft.points = '';
+    el('pendingInput').value = '';
+    renderPreview();
+  });
+
+  function addScoreEvent() {
+    var points = Number(draft.points);
+    var selectedPlayers = state.players.filter(function(p){ return draft.playerIds.indexOf(p.id) !== -1; });
+
+    if (!selectedPlayers.length) return showToast('เลือกผู้เล่นอย่างน้อย 1 คน');
+    if (draft.category === 'goods') return showToast('เลือกชนิดสินค้าก่อน');
+    if (!draft.points || !Number.isFinite(points) || points === 0) return showToast('เลือกหรือกรอกคะแนนก่อน');
+
+    var snapshots = [];
+    selectedPlayers.forEach(function(p){
+      var before = p.score;
+      p.score += points;
+      snapshots.push({
+        id:p.id,
+        name:p.name,
+        color:p.color,
+        before:before,
+        after:p.score
+      });
+    });
+
+    state.history.push({
+      id:uid(),
+      type:'group_score',
+      players:snapshots,
+      category:draft.category,
+      delta:points,
+      at:Date.now()
+    });
+    if (state.history.length > 250) state.history = state.history.slice(-250);
+
+    saveState();
+    renderDashboard();
+    scoreOverlay.classList.remove('show');
+    showToast('เพิ่ม '+signed(points)+' ให้ '+selectedPlayers.length+' คนแล้ว');
+    resetDraft();
+  }
+
+  function undo() {
+    var last = state.history.pop();
+    if (!last) return showToast('ยังไม่มีรายการให้ Undo');
+
+    if (Array.isArray(last.players) && last.players.length) {
+      last.players.forEach(function(snapshot){
+        var p = state.players.find(function(x){ return x.id === snapshot.id; });
+        if (p) p.score -= Number(last.delta) || 0;
+      });
+      saveState();
+      renderDashboard();
+      showToast('ย้อนกลับรายการล่าสุด '+last.players.length+' คน');
+      return;
+    }
+
+    if (last.playerId) {
+      var oldPlayer = state.players.find(function(x){ return x.id === last.playerId; });
+      if (oldPlayer) oldPlayer.score -= Number(last.delta) || 0;
+      saveState();
+      renderDashboard();
+      showToast('ย้อนกลับ '+(last.name || 'รายการล่าสุด')+' '+signed(Number(last.delta)||0));
+      return;
+    }
+
+    saveState();
+    renderDashboard();
+  }
+
+  function renderHistory() {
+    var list = el('historyList');
+    list.innerHTML = '';
+    if (!state.history.length) {
+      list.innerHTML = '<div class="empty">ยังไม่มีประวัติคะแนน</div>';
+      return;
+    }
+
+    state.history.slice().reverse().forEach(function(h){
+      var item = document.createElement('div');
+      item.className = 'history-item';
+
+      if (Array.isArray(h.players) && h.players.length) {
+        var playerHtml = h.players.map(function(p){
+          return '<span><span class="mini-dot" style="background:'+p.color+'"></span>'+escapeHtml(p.name)+'</span>';
+        }).join(' • ');
+        item.innerHTML =
+          '<div class="history-head">' +
+            '<div class="history-title">'+categoryLabel(h.category)+' '+signed(Number(h.delta)||0)+'</div>' +
+            '<div class="history-time">'+new Date(h.at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+'</div>' +
+          '</div>' +
+          '<div class="history-players">'+playerHtml+'</div>';
+      } else {
+        item.innerHTML =
+          '<div class="history-head">' +
+            '<div class="history-title">'+categoryLabel(h.category)+' '+signed(Number(h.delta)||0)+'</div>' +
+            '<div class="history-time">'+new Date(h.at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+'</div>' +
+          '</div>' +
+          '<div class="history-players"><span class="mini-dot" style="background:'+(h.color || '#777')+'"></span>'+escapeHtml(h.name || 'ข้อมูลเก่า')+'</div>';
+      }
+      list.appendChild(item);
+    });
+  }
+
+  function renderSummary() {
+    var grid = el('summaryGrid');
+    grid.innerHTML = '';
+
+    state.players.forEach(function(p){
+      var totals = {};
+      scoringCategories.forEach(function(c){ totals[c.id] = 0; });
+      var legacyGoods = 0;
+      var legacy = 0;
+
+      state.history.forEach(function(h){
+        var applies = false;
+        if (Array.isArray(h.players)) applies = h.players.some(function(x){ return x.id === p.id; });
+        else applies = h.playerId === p.id;
+        if (!applies) return;
+
+        var delta = Number(h.delta) || 0;
+        if (Object.prototype.hasOwnProperty.call(totals,h.category)) totals[h.category] += delta;
+        else if (h.category === 'goods_legacy' || h.category === 'goods' || h.category === 'expansion') legacyGoods += delta;
+        else legacy += delta;
+      });
+
+      var card = document.createElement('div');
+      card.className = 'summary-card';
+      var rows = '';
+      baseCategories.forEach(function(c){
+        rows += '<div class="summary-row"><span>'+c.label+'</span><strong>'+totals[c.id]+'</strong></div>';
+      });
+      goodsTypes.forEach(function(g){
+        rows += '<div class="summary-row"><span>'+g.label+'</span><strong>'+totals[g.id]+'</strong></div>';
+      });
+      if (legacyGoods) rows += '<div class="summary-row"><span>🎁 สินค้าเดิม</span><strong>'+legacyGoods+'</strong></div>';
+      if (legacy) rows += '<div class="summary-row"><span>🕘 คะแนนเดิม</span><strong>'+legacy+'</strong></div>';
+
+      card.innerHTML =
+        '<div class="summary-head">' +
+          '<div class="summary-player"><span class="mini-dot" style="background:'+p.color+'"></span>'+escapeHtml(p.name)+'</div>' +
+          '<div class="summary-total">'+p.score+'</div>' +
+        '</div>' +
+        '<div class="summary-rows">'+rows+'</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function renderSetup() {
+    var chooser = el('countChooser');
+    chooser.innerHTML = '';
+    [2,3,4,5,6].forEach(function(n){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'count-btn'+(n===setupCount?' active':'');
+      b.textContent = n;
+      b.onclick = function(){ setupCount=n; renderSetup(); };
+      chooser.appendChild(b);
+    });
+
+    var list = el('setupList');
+    list.innerHTML = '';
+    for (var i=0;i<setupCount;i++) {
+      var previous = state.players[i];
+      var row = document.createElement('div');
+      row.className = 'setup-player';
+
+      var options = palette.map(function(c){
+        var chosen = (previous && previous.color ? previous.color : palette[i % palette.length].value) === c.value;
+        return '<option value="'+c.value+'"'+(chosen?' selected':'')+'>'+c.name+'</option>';
+      }).join('');
+
+      row.innerHTML =
+        '<div class="setup-number">'+(i+1)+'</div>' +
+        '<input class="field setup-name" value="'+escapeHtml(previous ? previous.name : 'ผู้เล่น '+(i+1))+'" maxlength="24" aria-label="ชื่อผู้เล่น '+(i+1)+'" />' +
+        '<select class="field setup-color" aria-label="สีผู้เล่น '+(i+1)+'">'+options+'</select>';
+      list.appendChild(row);
+    }
+  }
+
+  function openSetup() {
+    setupCount = state.playerCount || state.players.length || 4;
+    renderSetup();
+    setupOverlay.classList.add('show');
+  }
+
+  el('startBtn').addEventListener('click',function(){
+    var rows = Array.from(el('setupList').querySelectorAll('.setup-player'));
+    var used = new Set();
+    var players = rows.map(function(row,i){
+      var color = row.querySelector('.setup-color').value;
+      if (used.has(color)) {
+        var free = palette.find(function(c){ return !used.has(c.value); });
+        if (free) color = free.value;
+      }
+      used.add(color);
+      return {
+        id:uid(),
+        name:row.querySelector('.setup-name').value.trim() || 'ผู้เล่น '+(i+1),
+        color:color,
+        score:0
+      };
+    });
+
+    state = {
+      started:true,
+      playerCount:setupCount,
+      players:players,
+      history:[],
+      createdAt:Date.now()
+    };
+    saveState();
+    setupOverlay.classList.remove('show');
+    renderDashboard();
+  });
+
+  el('openScoreBtn').addEventListener('click',openScore);
+  el('closeScoreBtn').addEventListener('click',closeScore);
+  el('confirmScoreBtn').addEventListener('click',addScoreEvent);
+  scoreOverlay.addEventListener('click',function(e){ if (e.target === scoreOverlay) closeScore(); });
+
+  el('undoBtn').addEventListener('click',undo);
+
+  el('historyBtn').addEventListener('click',function(){
+    renderHistory();
+    historyOverlay.classList.add('show');
+  });
+  el('closeHistoryBtn').addEventListener('click',function(){ historyOverlay.classList.remove('show'); });
+  historyOverlay.addEventListener('click',function(e){ if (e.target === historyOverlay) historyOverlay.classList.remove('show'); });
+
+  el('summaryBtn').addEventListener('click',function(){
+    renderSummary();
+    summaryOverlay.classList.add('show');
+  });
+  el('closeSummaryBtn').addEventListener('click',function(){ summaryOverlay.classList.remove('show'); });
+  summaryOverlay.addEventListener('click',function(e){ if (e.target === summaryOverlay) summaryOverlay.classList.remove('show'); });
+
+  el('newGameBtn').addEventListener('click',function(){
+    if (state.started && state.history.length && !confirm('เริ่มเกมใหม่? คะแนนและประวัติเกมปัจจุบันจะถูกล้าง')) return;
+    openSetup();
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    });
+  }
+
+  renderDashboard();
+  if (!state.started) openSetup();
+})();
+</script>
+</body>
+</html>
