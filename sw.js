@@ -1,12 +1,11 @@
-const CACHE = 'meeple-score-v2-premium-1';
+const CACHE = 'meeple-score-v2-premium-2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-180.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/favicon.svg'
+  './icons/app-icon.svg',
+  './icons/favicon.svg',
+  './assets/medieval-map.svg'
 ];
 
 self.addEventListener('install', event => {
@@ -27,7 +26,6 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -40,7 +38,6 @@ self.addEventListener('fetch', event => {
     );
     return;
   }
-
   event.respondWith(
     caches.match(event.request)
       .then(cached => cached || fetch(event.request).then(response => {
