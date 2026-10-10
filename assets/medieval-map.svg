@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5d452b" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#34513b" stop-opacity=".18"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="1.2"/></filter>
+  </defs>
+  <g fill="none" stroke="url(#ink)" stroke-width="3" opacity=".58">
+    <path d="M-30 825 C180 690 315 760 475 650 S780 575 980 680 S1320 765 1660 610"/>
+    <path d="M-20 875 C190 745 350 840 540 725 S850 630 1060 745 S1375 800 1650 675" opacity=".55"/>
+    <path d="M170 130 C300 200 365 165 455 245 S615 355 730 310 S930 150 1050 220 S1250 410 1480 280" opacity=".4"/>
+  </g>
+  <path d="M80 520 C245 410 355 470 455 390 S650 300 800 385 S1030 530 1190 455 S1425 300 1570 375"
+        fill="none" stroke="#65849a" stroke-width="22" stroke-linecap="round" opacity=".09"/>
+  <path d="M80 520 C245 410 355 470 455 390 S650 300 800 385 S1030 530 1190 455 S1425 300 1570 375"
+        fill="none" stroke="#405c6c" stroke-width="2" stroke-dasharray="8 14" opacity=".18"/>
+
+  <g opacity=".17" fill="#3e5338" filter="url(#soft)">
+    <path d="M55 800 l80-160 80 160z"/>
+    <path d="M160 820 l105-215 110 215z"/>
+    <path d="M1210 810 l95-195 100 195z"/>
+    <path d="M1330 825 l120-245 120 245z"/>
+  </g>
+
+  <g transform="translate(965 175)" opacity=".18" stroke="#4c3522" stroke-width="4" fill="#765437">
+    <rect x="30" y="78" width="145" height="96" rx="4"/>
+    <rect x="0" y="48" width="48" height="126"/>
+    <rect x="157" y="48" width="48" height="126"/>
+    <path d="M0 48 h12 v-18 h12 v18 h24 v-18 h12 v18"/>
+    <path d="M145 48 h12 v-18 h12 v18 h24 v-18 h12 v18"/>
+    <path d="M28 78 L102 12 L177 78z"/>
+    <rect x="88" y="120" width="30" height="54" fill="#3f2b1c"/>
+  </g>
+
+  <g transform="translate(245 240)" opacity=".15" stroke="#4f3825" stroke-width="3" fill="none">
+    <circle cx="0" cy="0" r="88"/>
+    <circle cx="0" cy="0" r="68"/>
+    <path d="M0-78 L16-16 0 0 -16-16z" fill="#4f3825"/>
+    <path d="M78 0 L16 16 0 0 16-16z" fill="#4f3825"/>
+    <path d="M0 78 L-16 16 0 0 16 16z" fill="#4f3825"/>
+    <path d="M-78 0 L-16-16 0 0 -16 16z" fill="#4f3825"/>
+    <text x="0" y="-102" text-anchor="middle" font-family="Georgia,serif" font-size="28" fill="#4f3825" stroke="none">N</text>
+  </g>
+
+  <g opacity=".13" fill="#3f5439">
+    <circle cx="440" cy="700" r="18"/><circle cx="475" cy="682" r="14"/><circle cx="505" cy="710" r="17"/>
+    <circle cx="850" cy="785" r="20"/><circle cx="890" cy="770" r="15"/><circle cx="925" cy="794" r="18"/>
+    <circle cx="1420" cy="510" r="16"/><circle cx="1452" cy="492" r="13"/><circle cx="1480" cy="520" r="17"/>
+  </g>
+
+  <g opacity=".12" fill="#5d4028" font-family="Georgia,serif" font-style="italic">
+    <text x="105" y="930" font-size="38">The Southern Marches</text>
+    <text x="1170" y="145" font-size="30">Old Crown Road</text>
+    <text x="565" y="520" font-size="28">River Vale</text>
+  </g>
+</svg>
