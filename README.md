@@ -39,3 +39,8 @@ Designed as an original medieval-inspired tabletop interface.
 ## Backup branch
 
 The pre-WebGL V2 design is preserved on the `v2-medieval-backup` branch.
+
+- Queued 3D movement engine: repeated score updates are processed sequentially without rebuilding the scene.
+- On-demand rendering: WebGL renders only while Meeples move, the camera changes, or auto-spin is active.
+
+The first WebGL implementation is preserved on the `v2-true3d-first-pass` branch.
