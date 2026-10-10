@@ -1749,7 +1749,7 @@
   }
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true, powerPreference:'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1773,7 +1773,7 @@
   const sun = new THREE.DirectionalLight(0xffe4aa, 3.1);
   sun.position.set(-8, 15, 7);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048,2048);
+  sun.shadow.mapSize.set(1024,1024);
   sun.shadow.camera.left = -12;
   sun.shadow.camera.right = 12;
   sun.shadow.camera.top = 10;
@@ -1822,21 +1822,21 @@
 
   function canvasTextureForCell(n) {
     const cnv = document.createElement('canvas');
-    cnv.width = 256; cnv.height = 144;
+    cnv.width = 128; cnv.height = 72;
     const ctx = cnv.getContext('2d');
     const special = n % 10 === 0;
-    const grad = ctx.createLinearGradient(0,0,0,144);
+    const grad = ctx.createLinearGradient(0,0,0,72);
     grad.addColorStop(0, special ? '#f7dea0' : '#f6e9c5');
     grad.addColorStop(1, special ? '#d9b765' : '#ddcda7');
     ctx.fillStyle = grad;
-    ctx.fillRect(0,0,256,144);
+    ctx.fillRect(0,0,128,72);
     ctx.strokeStyle = special ? '#8a602c' : '#8b7a58';
-    ctx.lineWidth = special ? 10 : 6;
-    ctx.strokeRect(6,6,244,132);
+    ctx.lineWidth = special ? 5 : 3;
+    ctx.strokeRect(3,3,122,66);
     ctx.fillStyle = '#3f3626';
-    ctx.font = '900 62px Georgia, serif';
+    ctx.font = '900 31px Georgia, serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(String(n),128,76);
+    ctx.fillText(String(n),64,38);
     const tex = new THREE.CanvasTexture(cnv);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -1993,6 +1993,8 @@
     g.add(baseDisc,legL,legR,torso,armL,armR,head,label);
     g.scale.setScalar(.68);
     g.userData.label=label;
+    g.userData.labelName=player.name;
+    g.userData.colorMat=mat;
     g.userData.score=Number(player.score)||0;
     world.add(g);
     return g;
@@ -2040,20 +2042,19 @@
           return;
         }
 
-        // Keep the 3D color in sync with the chosen player color.
-        obj.traverse(ch=>{
-          if(ch.isMesh && ch.material && ch.material.color && ch !== obj.children[0]){
-            if(ch.material.metalness !== undefined && ch.material.color.getHex() !== 0xf6edcf){
-              // Only update colored meeple parts, not the pale base.
-              if(ch.material.roughness < .6) ch.material.color.set(p.color);
-            }
-          }
-        });
+        // Update only the shared Meeple material, not every child mesh.
+        if (obj.userData.colorMat && obj.userData.colorMat.color) {
+          obj.userData.colorMat.color.set(p.color);
+        }
 
-        if(obj.userData.label?.material?.map){
-          obj.userData.label.material.map.dispose();
-          obj.userData.label.material.map=makeLabelTexture(p.name);
-          obj.userData.label.material.needsUpdate=true;
+        // Rebuild the label texture only when the player's name actually changes.
+        if (obj.userData.label && obj.userData.labelName !== p.name) {
+          const oldMap = obj.userData.label.material?.map;
+          const newMap = makeLabelTexture(p.name);
+          obj.userData.label.material.map = newMap;
+          obj.userData.label.material.needsUpdate = true;
+          obj.userData.labelName = p.name;
+          if (oldMap) oldMap.dispose();
         }
 
         const oldScore=Number(obj.userData.score)||0;
@@ -2167,6 +2168,27 @@
     spinBtn.textContent=autoSpin?'⏸ หยุดหมุน':'⟳ หมุน';
   });
 
+  let sceneFailed = false;
+
+  function show3dError(message) {
+    sceneFailed = true;
+    status.classList.remove('ready');
+    status.classList.add('error');
+    status.textContent = message;
+  }
+
+  canvas.addEventListener('webglcontextlost', event => {
+    event.preventDefault();
+    show3dError('ระบบ 3D หยุดชั่วคราวจาก WebGL context • กำลังกู้คืนฉาก…');
+  });
+
+  canvas.addEventListener('webglcontextrestored', () => {
+    status.classList.remove('error');
+    status.textContent = 'กำลังกู้คืนฉาก 3D…';
+    // Rebuilding all GPU resources is safest after a context restore.
+    window.setTimeout(() => window.location.reload(), 250);
+  });
+
   const resize=()=>{
     const w=Math.max(1,shell.clientWidth);
     const h=Math.max(1,shell.clientHeight);
@@ -2180,24 +2202,41 @@
   const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   let previous=performance.now();
   function frame(now){
-    const dt=Math.min(.05,(now-previous)/1000);
-    previous=now;
-    if(autoSpin && !reducedMotion && pointers.size===0){
-      yaw += dt*.18;
-      updateCamera();
-    } else if(!reducedMotion && pointers.size===0 && now-lastInteraction>6500){
-      yaw += dt*.018;
-      updateCamera();
+    try {
+      if (!sceneFailed) {
+        const dt=Math.min(.05,(now-previous)/1000);
+        previous=now;
+        if(autoSpin && !reducedMotion && pointers.size===0){
+          yaw += dt*.18;
+          updateCamera();
+        } else if(!reducedMotion && pointers.size===0 && now-lastInteraction>6500){
+          yaw += dt*.018;
+          updateCamera();
+        }
+        dust.rotation.y += dt*.012;
+        updateMeepleAnimations(now);
+        renderer.render(scene,camera);
+      }
+    } catch (error) {
+      console.error('Meeple 3D render failed', error);
+      show3dError('ฉาก 3D หยุดทำงานชั่วคราว • คะแนนหลักยังใช้งานได้');
     }
-    dust.rotation.y += dt*.012;
-    updateMeepleAnimations(now);
-    renderer.render(scene,camera);
     requestAnimationFrame(frame);
   }
 
-  window.addEventListener('meeple3d:update',e=>syncPlayers(e.detail?.players||[]));
-  syncPlayers(window.__meeple3dPlayers||[]);
-  status.classList.add('ready');
+  function safeSyncPlayers(players) {
+    if (sceneFailed) return;
+    try {
+      syncPlayers(players);
+    } catch (error) {
+      console.error('Meeple 3D sync failed', error);
+      show3dError('เกิดข้อผิดพลาดขณะอัปเดตตัวหมาก 3D • คะแนนยังถูกบันทึกอยู่');
+    }
+  }
+
+  window.addEventListener('meeple3d:update',e=>safeSyncPlayers(e.detail?.players||[]));
+  safeSyncPlayers(window.__meeple3dPlayers||[]);
+  if (!sceneFailed) status.classList.add('ready');
   requestAnimationFrame(frame);
 })();
 </script>
