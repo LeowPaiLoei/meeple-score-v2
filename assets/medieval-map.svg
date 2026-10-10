@@ -54,4 +54,40 @@
     <text x="1170" y="145" font-size="30">Old Crown Road</text>
     <text x="565" y="520" font-size="28">River Vale</text>
   </g>
+
+  <g opacity=".12" stroke="#4e3825" stroke-width="3" fill="#8a653d">
+    <g transform="translate(1120 650)">
+      <rect x="0" y="35" width="34" height="30" rx="2"/>
+      <path d="M-4 35 L17 15 L38 35 Z"/>
+      <rect x="47" y="22" width="42" height="43" rx="2"/>
+      <path d="M42 22 L68 0 L94 22 Z"/>
+      <rect x="102" y="39" width="30" height="26" rx="2"/>
+      <path d="M98 39 L117 22 L136 39 Z"/>
+    </g>
+    <g transform="translate(365 520)">
+      <rect x="0" y="35" width="32" height="29" rx="2"/>
+      <path d="M-4 35 L16 16 L36 35 Z"/>
+      <rect x="44" y="28" width="38" height="36" rx="2"/>
+      <path d="M40 28 L63 7 L86 28 Z"/>
+    </g>
+  </g>
+
+  <g opacity=".14" fill="#395139">
+    <path d="M117 535 l16-34 16 34h-9l13 28h-40l13-28z"/>
+    <path d="M155 555 l14-29 14 29h-8l11 24h-34l11-24z"/>
+    <path d="M1270 445 l17-36 17 36h-9l14 30h-42l14-30z"/>
+    <path d="M1310 470 l15-31 15 31h-8l12 25h-36l12-25z"/>
+    <path d="M760 170 l16-34 16 34h-9l13 28h-40l13-28z"/>
+  </g>
+
+  <g opacity=".11" stroke="#5a4128" stroke-width="4" fill="none">
+    <path d="M104 690 C270 610 390 605 520 655 S760 720 900 650 S1110 540 1290 595"/>
+    <path d="M101 690 C270 610 390 605 520 655 S760 720 900 650 S1110 540 1290 595" stroke-dasharray="3 14" stroke-width="8"/>
+  </g>
+
+  <g opacity=".12" fill="#5c4027" font-family="Georgia,serif">
+    <text x="1090" y="735" font-size="24">King's Rest</text>
+    <text x="340" y="610" font-size="22">Willow Hamlet</text>
+  </g>
+
 </svg>
